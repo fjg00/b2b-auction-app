@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, ActivityIndicator, SafeAreaView, TextInput, Text } from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, TextInput, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { LotCard } from '../components/LotCard';
 import { fetchAuctions } from '@shared/api';

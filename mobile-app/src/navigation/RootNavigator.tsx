@@ -34,7 +34,7 @@ function TabNavigator() {
                 name="Home"
                 component={HomeScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Home color={color} size={size} />
+                    tabBarIcon: ({ color, size }) => <Home color={color} size={Number(size)} />
                 }}
             />
             <Tab.Screen
@@ -42,7 +42,7 @@ function TabNavigator() {
                 component={MyBidsScreen}
                 options={{
                     tabBarLabel: 'My Bids',
-                    tabBarIcon: ({ color, size }) => <Gavel color={color} size={size} />
+                    tabBarIcon: ({ color, size }) => <Gavel color={color} size={Number(size)} />
                 }}
             />
             <Tab.Screen
@@ -50,14 +50,14 @@ function TabNavigator() {
                 component={MySalesScreen}
                 options={{
                     tabBarLabel: 'My Sales',
-                    tabBarIcon: ({ color, size }) => <Package color={color} size={size} />
+                    tabBarIcon: ({ color, size }) => <Package color={color} size={Number(size)} />
                 }}
             />
             <Tab.Screen
                 name="Profile"
                 component={ProfileScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <User color={color} size={size} />
+                    tabBarIcon: ({ color, size }) => <User color={color} size={Number(size)} />
                 }}
             />
         </Tab.Navigator>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, SafeAreaView, FlatList } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, FlatList } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { fetchSellerProfile } from '@shared/api';
 import { SellerProfile } from '@shared/types';
