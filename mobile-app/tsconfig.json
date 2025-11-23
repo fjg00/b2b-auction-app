@@ -1,0 +1,23 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/api": [
+        "../shared/api/index.ts"
+      ],
+      "@shared/types": [
+        "../shared/types/index.ts"
+      ],
+      "@shared/constants": [
+        "../shared/constants/index.ts"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "../shared/**/*.ts"
+  ]
+}

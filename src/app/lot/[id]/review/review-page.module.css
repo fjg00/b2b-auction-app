@@ -1,0 +1,60 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--spacing-md);
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: var(--spacing-xl);
+}
+
+.pageTitle {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--color-text);
+    margin-bottom: var(--spacing-sm);
+}
+
+.subtitle {
+    font-size: 1.125rem;
+    color: var(--color-text-muted);
+}
+
+.successCard {
+    background-color: white;
+    padding: var(--spacing-2xl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    text-align: center;
+    max-width: 500px;
+    margin: 0 auto;
+    box-shadow: var(--shadow-lg);
+}
+
+.successIcon {
+    font-size: 4rem;
+    margin-bottom: var(--spacing-lg);
+}
+
+.successTitle {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-success);
+    margin-bottom: var(--spacing-md);
+}
+
+.successText {
+    color: var(--color-text);
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.5;
+}
+
+.redirectText {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+}

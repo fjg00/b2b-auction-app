@@ -1,0 +1,54 @@
+.badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Variants */
+.default {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+
+.success {
+    background-color: #d1fae5;
+    /* Emerald 100 */
+    color: #065f46;
+    /* Emerald 800 */
+}
+
+.warning {
+    background-color: #fef3c7;
+    /* Amber 100 */
+    color: #92400e;
+    /* Amber 800 */
+}
+
+.danger {
+    background-color: #fee2e2;
+    /* Red 100 */
+    color: #991b1b;
+    /* Red 800 */
+}
+
+.info {
+    background-color: #dbeafe;
+    /* Blue 100 */
+    color: #1e40af;
+    /* Blue 800 */
+}
+
+/* Sizes */
+.sm {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.md {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}

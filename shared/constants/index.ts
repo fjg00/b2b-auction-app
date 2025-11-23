@@ -1,0 +1,60 @@
+export const PRODUCT_CATEGORIES = [
+    "Food & Beverage",
+    "Fresh Produce",
+    "Dairy & Eggs",
+    "Meat, Poultry & Fish",
+    "Frozen Foods",
+    "Dry Grocery",
+    "Snacks & Confectionery",
+    "Bakery & Pastry",
+    "Beverages",
+    "Coffee & Tea",
+    "Non-Food FMCG",
+    "Household Cleaning & Detergents",
+    "Paper Products",
+    "Personal Care & Hygiene",
+    "Baby Care",
+    "Pet Food & Pet Care",
+    "HORECA & Retail Supplies",
+    "Bulk Ingredients",
+    "Packaging & Disposables",
+    "Cleaning & Sanitation",
+    "General Merchandise",
+    "Small Appliances",
+    "Electronics & Accessories",
+    "Home & Kitchen",
+    "Office & School Supplies",
+    "Seasonal & Decor"
+];
+
+export const CONDITION_CATEGORIES = [
+    "Near-Expiry (0–7 days)",
+    "Short-Dated (8–30 days)",
+    "Medium-Dated (1–3 months)",
+    "Overstock / Excess Inventory",
+    "Slow-Moving Stock",
+    "Discontinued / Delisted Items",
+    "Seasonal Clearance",
+    "Damaged Packaging – Product OK",
+    "Cosmetic Damage – Product OK",
+    "Customer Returns – Unopened",
+    "Customer Returns – Open Box / Mixed",
+    "Short Shelf-Life on Arrival",
+    "Display / Demo Items",
+    "Liquidation / Store Closure",
+    "Mixed Pallet / Assorted Lots"
+];
+
+export const SMART_TAGS = [
+    "Halal",
+    "Gluten-Free",
+    "Organic",
+    "Chilled",
+    "Frozen",
+    "Ambient",
+    "Full Pallet",
+    "Half Pallet",
+    "Mixed Cartons",
+    "Local Brand",
+    "Imported"
+];
