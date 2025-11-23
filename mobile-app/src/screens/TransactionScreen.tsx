@@ -3,6 +3,15 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } fr
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { CreditCard, Truck, MessageSquare, Clock, AlertTriangle, X } from 'lucide-react-native';
 
+// Import new Seller Components
+import { SellerTransactionHeader } from '../components/seller-transaction/SellerTransactionHeader';
+import { SellerTimeline } from '../components/seller-transaction/SellerTimeline';
+import { SellerPayoutSummary } from '../components/seller-transaction/SellerPayoutSummary';
+import { SellerFulfillmentCard } from '../components/seller-transaction/SellerFulfillmentCard';
+import { SellerLogisticsCard } from '../components/seller-transaction/SellerLogisticsCard';
+import { SellerPayoutDetailsCard } from '../components/seller-transaction/SellerPayoutDetailsCard';
+import { SellerDocumentsCard } from '../components/seller-transaction/SellerDocumentsCard';
+
 export default function TransactionScreen({ route, navigation }: any) {
     const { lotId, role = 'buyer' } = route.params || {};
     const [activeTab, setActiveTab] = useState<'payment' | 'logistics'>('payment');
@@ -17,6 +26,46 @@ export default function TransactionScreen({ route, navigation }: any) {
         status: 'awaiting_payment',
         seller: 'Global Distributors Inc.',
         dueDate: 'Nov 22, 2025',
+    };
+
+    // Mock Data for Seller View
+    const sellerTransaction = {
+        transactionId: 'TX-12345',
+        auctionId: '13452',
+        itemTitle: 'Mixed Beverages',
+        itemQuantity: 48,
+        unitPrice: 26.04,
+        buyerName: 'John Doe',
+        buyerCompany: 'Retail King LLC',
+        netPayout: 1456.88,
+        payoutMethod: 'Bank Transfer',
+        payoutDate: 'Nov 25, 2025',
+        status: 'READY_FOR_RELEASE' as const,
+        winningBid: 1250.00,
+        buyerPremium: 62.50,
+        platformFee: 0.00,
+        vat: 144.38,
+        currency: 'USD',
+        timeline: [
+            { id: '1', label: 'Auction closed', date: 'Nov 20, 10:00 AM', status: 'completed' as const },
+            { id: '2', label: 'Buyer payment initiated', date: 'Nov 20, 11:30 AM', status: 'completed' as const },
+            { id: '3', label: 'Payment verified', date: 'Nov 21, 09:00 AM', status: 'completed' as const },
+            { id: '4', label: 'Seller confirm goods', status: 'current' as const },
+            { id: '5', label: 'Goods handed over', status: 'pending' as const },
+            { id: '6', label: 'Payout sent', status: 'pending' as const },
+        ],
+        logistics: {
+            mode: 'pickup' as const,
+            pickupLocation: '123 Warehouse Blvd, Logistics City, NY 10001',
+            pickupWindow: 'Nov 22 - Nov 24, 9 AM - 5 PM',
+        },
+        payoutDetails: {
+            method: 'Bank Transfer',
+            bankName: 'Bank Audi',
+            accountName: 'Global Distributors Inc.',
+            maskedAccount: '**** 9114',
+            expectedDate: 'Nov 25, 2025',
+        }
     };
 
     const handleOpenChat = () => {
@@ -120,7 +169,7 @@ export default function TransactionScreen({ route, navigation }: any) {
             <View style={styles.totalDivider} />
 
             <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>{role === 'buyer' ? 'Total Due' : 'Total Amount'}</Text>
+                <Text style={styles.totalLabel}>Total Due</Text>
                 <Text style={styles.totalValue}>USD $1,456.88</Text>
             </View>
 
@@ -199,15 +248,9 @@ export default function TransactionScreen({ route, navigation }: any) {
             </View>
 
             {/* Primary Action Button */}
-            {role === 'buyer' ? (
-                <TouchableOpacity style={styles.primaryButton} onPress={() => Alert.alert('Payment', 'Redirecting to payment gateway...')}>
-                    <Text style={styles.primaryButtonText}>Mark as Paid / Upload Proof</Text>
-                </TouchableOpacity>
-            ) : (
-                <TouchableOpacity style={styles.primaryButton} onPress={() => Alert.alert('Payment', 'Confirming payment receipt...')}>
-                    <Text style={styles.primaryButtonText}>Confirm Payment Receipt</Text>
-                </TouchableOpacity>
-            )}
+            <TouchableOpacity style={styles.primaryButton} onPress={() => Alert.alert('Payment', 'Redirecting to payment gateway...')}>
+                <Text style={styles.primaryButtonText}>Mark as Paid / Upload Proof</Text>
+            </TouchableOpacity>
 
             {/* Support Info */}
             <View style={styles.supportSection}>
@@ -255,8 +298,8 @@ export default function TransactionScreen({ route, navigation }: any) {
                 <View style={styles.bottomSheet}>
                     <View style={styles.chatHeader}>
                         <View>
-                            <Text style={styles.chatTitle}>Chat with Seller</Text>
-                            <Text style={styles.chatSubtitle}>{transaction.seller}</Text>
+                            <Text style={styles.chatTitle}>Chat with {role === 'buyer' ? 'Seller' : 'Buyer'}</Text>
+                            <Text style={styles.chatSubtitle}>{role === 'buyer' ? transaction.seller : sellerTransaction.buyerCompany}</Text>
                         </View>
                         <TouchableOpacity onPress={() => setChatOpen(false)} style={styles.closeButton}>
                             <X size={24} color={COLORS.text} />
@@ -285,6 +328,57 @@ export default function TransactionScreen({ route, navigation }: any) {
         </Modal>
     );
 
+    // RENDER SELLER VIEW
+    if (role === 'seller') {
+        return (
+            <>
+                <ScrollView style={styles.container}>
+                    <SellerTransactionHeader
+                        {...sellerTransaction}
+                        onBack={() => navigation.goBack()}
+                        onChatPress={handleOpenChat}
+                        unreadCount={unreadCount}
+                    />
+
+                    <SellerTimeline events={sellerTransaction.timeline} />
+
+                    <SellerPayoutSummary
+                        winningBid={sellerTransaction.winningBid}
+                        buyerPremium={sellerTransaction.buyerPremium}
+                        platformFee={sellerTransaction.platformFee}
+                        vat={sellerTransaction.vat}
+                        netPayout={sellerTransaction.netPayout}
+                        currency={sellerTransaction.currency}
+                    />
+
+                    <SellerPayoutDetailsCard
+                        {...sellerTransaction.payoutDetails}
+                    />
+
+                    <SellerDocumentsCard
+                        onDownloadInvoice={() => Alert.alert('Download', 'Downloading Buyer Invoice...')}
+                        onDownloadStatement={() => Alert.alert('Download', 'Downloading Seller Statement...')}
+                        onDownloadReleaseNote={() => Alert.alert('Download', 'Downloading Release Note...')}
+                    />
+
+                    <SellerFulfillmentCard
+                        status={sellerTransaction.status}
+                        onConfirmReady={() => Alert.alert('Success', 'Goods confirmed ready!')}
+                        onReportIssue={() => Alert.alert('Report Issue', 'Opening issue report...')}
+                    />
+
+                    <SellerLogisticsCard
+                        mode={sellerTransaction.logistics.mode}
+                        pickupLocation={sellerTransaction.logistics.pickupLocation}
+                        pickupWindow={sellerTransaction.logistics.pickupWindow}
+                    />
+                </ScrollView>
+                {renderChatBottomSheet()}
+            </>
+        );
+    }
+
+    // RENDER BUYER VIEW (Existing)
     return (
         <>
             <ScrollView style={styles.container}>
@@ -320,6 +414,7 @@ export default function TransactionScreen({ route, navigation }: any) {
         </>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
@@ -804,5 +899,27 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: SPACING.md,
         fontStyle: 'italic',
+    },
+    chatButtonFloating: {
+        position: 'absolute',
+        bottom: 24,
+        right: 24,
+        backgroundColor: '#16A34A',
+        borderRadius: 30,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 8,
+    },
+    chatButtonFloatingText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 14,
     },
 });

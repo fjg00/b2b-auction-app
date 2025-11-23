@@ -100,6 +100,15 @@ export default function RootNavigator() {
 
                     }}
                 />
+                <Stack.Screen
+                    name="CreateLot"
+                    component={CreateLotScreen}
+                    options={{
+                        headerShown: true,
+                        title: 'Create New Lot',
+                        headerTintColor: COLORS.text,
+                    }}
+                />
 
             </Stack.Navigator>
         </NavigationContainer>
