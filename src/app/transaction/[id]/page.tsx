@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, use, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import styles from './transaction.module.css';
 import { TransactionHeader } from '@/components/transaction/TransactionHeader';
@@ -33,7 +33,8 @@ const MOCK_DATA = {
     ]
 };
 
-export default function TransactionPage({ params }: { params: { id: string } }) {
+function TransactionContent({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const searchParams = useSearchParams();
     const role = (searchParams.get('role') as 'buyer' | 'seller') || 'buyer';
     const [isChatOpen, setIsChatOpen] = useState(false);
@@ -96,5 +97,13 @@ export default function TransactionPage({ params }: { params: { id: string } }) 
                 <ChatPanel role={role} onClose={() => setIsChatOpen(false)} />
             </div>
         </>
+    );
+}
+
+export default function TransactionPage(props: { params: Promise<{ id: string }> }) {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <TransactionContent {...props} />
+        </Suspense>
     );
 }

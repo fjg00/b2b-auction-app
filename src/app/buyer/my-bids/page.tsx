@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { LotCard } from '@/components/lots/LotCard';
 import { Badge } from '@/components/ui/Badge';
 import styles from './my-bids.module.css';
+import { useSearchParams } from 'next/navigation';
 
 // Mock Data
 const WATCHED_LOTS = [
@@ -61,9 +62,7 @@ const MY_BIDS = [
     },
 ];
 
-import { useSearchParams } from 'next/navigation';
-
-export default function MyBidsPage() {
+function MyBidsContent() {
     const searchParams = useSearchParams();
     const initialTab = searchParams.get('tab') === 'watchlist' ? 'watchlist' : 'bids';
     const [activeTab, setActiveTab] = useState<'watchlist' | 'bids'>(initialTab);
@@ -153,5 +152,13 @@ export default function MyBidsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function MyBidsPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <MyBidsContent />
+        </Suspense>
     );
 }
