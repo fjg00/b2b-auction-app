@@ -33,7 +33,7 @@ export default function MySalesScreen({ navigation }: any) {
         // If item is sold/won, go to seller transaction screen
         // Otherwise, go to item details (to edit or view)
         if (item.status === 'won') {
-            navigation.navigate('SellerTransaction', { transactionId: `TX-${item.id}` });
+            navigation.navigate('Transaction', { lotId: item.id, role: 'seller' });
         } else {
             navigation.navigate('ItemDetails', { id: item.id, isSeller: true });
         }

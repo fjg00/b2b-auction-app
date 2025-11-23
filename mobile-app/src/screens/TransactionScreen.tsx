@@ -4,7 +4,7 @@ import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { CreditCard, Truck, MessageSquare, Clock, AlertTriangle, X } from 'lucide-react-native';
 
 export default function TransactionScreen({ route, navigation }: any) {
-    const { lotId } = route.params || {};
+    const { lotId, role = 'buyer' } = route.params || {};
     const [activeTab, setActiveTab] = useState<'payment' | 'logistics'>('payment');
     const [chatOpen, setChatOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(1); // Mock unread count
@@ -120,7 +120,7 @@ export default function TransactionScreen({ route, navigation }: any) {
             <View style={styles.totalDivider} />
 
             <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total Due</Text>
+                <Text style={styles.totalLabel}>{role === 'buyer' ? 'Total Due' : 'Total Amount'}</Text>
                 <Text style={styles.totalValue}>USD $1,456.88</Text>
             </View>
 
@@ -143,46 +143,50 @@ export default function TransactionScreen({ route, navigation }: any) {
 
             <View style={styles.divider} />
 
-            {/* Payment Method */}
-            <Text style={styles.sectionHeader}>Payment Method</Text>
-            <View style={styles.paymentMethodBox}>
-                <Text style={styles.paymentMethodTitle}>Bank Transfer</Text>
-                <View style={styles.bankDetailRow}>
-                    <Text style={styles.bankLabel}>Bank Name:</Text>
-                    <Text style={styles.bankValue}>Bank Audi</Text>
-                </View>
-                <View style={styles.bankDetailRow}>
-                    <Text style={styles.bankLabel}>Account Name:</Text>
-                    <Text style={styles.bankValue}>ExpiryX Marketplace Ltd.</Text>
-                </View>
-                <View style={styles.bankDetailRow}>
-                    <Text style={styles.bankLabel}>IBAN:</Text>
-                    <Text style={styles.bankValue}>LB62 0999 0000 0001 0019 0122 9114</Text>
-                </View>
-                <View style={styles.bankDetailRow}>
-                    <Text style={styles.bankLabel}>SWIFT:</Text>
-                    <Text style={styles.bankValue}>AUDBLBBX</Text>
-                </View>
-                <View style={styles.bankDetailRow}>
-                    <Text style={styles.bankLabel}>Reference:</Text>
-                    <Text style={[styles.bankValue, styles.referenceCode]}>{transaction.id}</Text>
-                </View>
-                <Text style={styles.referenceNote}>
-                    ⚠️ Important: Include reference code in transfer notes
-                </Text>
+            {/* Payment Method - Only show for Buyer */}
+            {role === 'buyer' && (
+                <>
+                    <Text style={styles.sectionHeader}>Payment Method</Text>
+                    <View style={styles.paymentMethodBox}>
+                        <Text style={styles.paymentMethodTitle}>Bank Transfer</Text>
+                        <View style={styles.bankDetailRow}>
+                            <Text style={styles.bankLabel}>Bank Name:</Text>
+                            <Text style={styles.bankValue}>Bank Audi</Text>
+                        </View>
+                        <View style={styles.bankDetailRow}>
+                            <Text style={styles.bankLabel}>Account Name:</Text>
+                            <Text style={styles.bankValue}>ExpiryX Marketplace Ltd.</Text>
+                        </View>
+                        <View style={styles.bankDetailRow}>
+                            <Text style={styles.bankLabel}>IBAN:</Text>
+                            <Text style={styles.bankValue}>LB62 0999 0000 0001 0019 0122 9114</Text>
+                        </View>
+                        <View style={styles.bankDetailRow}>
+                            <Text style={styles.bankLabel}>SWIFT:</Text>
+                            <Text style={styles.bankValue}>AUDBLBBX</Text>
+                        </View>
+                        <View style={styles.bankDetailRow}>
+                            <Text style={styles.bankLabel}>Reference:</Text>
+                            <Text style={[styles.bankValue, styles.referenceCode]}>{transaction.id}</Text>
+                        </View>
+                        <Text style={styles.referenceNote}>
+                            ⚠️ Important: Include reference code in transfer notes
+                        </Text>
 
-                <View style={styles.complianceFooter}>
-                    <Text style={styles.complianceText}>ExpiryX Marketplace Ltd.</Text>
-                    <Text style={styles.complianceText}>Registered in Lebanon • VAT: LB-555-888-999</Text>
-                    <Text style={styles.complianceText}>456 Tech Park, Beirut Central District</Text>
-                </View>
-            </View>
+                        <View style={styles.complianceFooter}>
+                            <Text style={styles.complianceText}>ExpiryX Marketplace Ltd.</Text>
+                            <Text style={styles.complianceText}>Registered in Lebanon • VAT: LB-555-888-999</Text>
+                            <Text style={styles.complianceText}>456 Tech Park, Beirut Central District</Text>
+                        </View>
+                    </View>
 
-            <Text style={styles.emailNote}>
-                📧 You'll receive an email confirmation once payment is verified.
-            </Text>
+                    <Text style={styles.emailNote}>
+                        📧 You'll receive an email confirmation once payment is verified.
+                    </Text>
 
-            <View style={styles.divider} />
+                    <View style={styles.divider} />
+                </>
+            )}
 
             {/* Invoice Actions */}
             <View style={styles.actionButtons}>
@@ -194,9 +198,16 @@ export default function TransactionScreen({ route, navigation }: any) {
                 </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.primaryButton} onPress={() => Alert.alert('Payment', 'Redirecting to payment gateway...')}>
-                <Text style={styles.primaryButtonText}>Mark as Paid / Upload Proof</Text>
-            </TouchableOpacity>
+            {/* Primary Action Button */}
+            {role === 'buyer' ? (
+                <TouchableOpacity style={styles.primaryButton} onPress={() => Alert.alert('Payment', 'Redirecting to payment gateway...')}>
+                    <Text style={styles.primaryButtonText}>Mark as Paid / Upload Proof</Text>
+                </TouchableOpacity>
+            ) : (
+                <TouchableOpacity style={styles.primaryButton} onPress={() => Alert.alert('Payment', 'Confirming payment receipt...')}>
+                    <Text style={styles.primaryButtonText}>Confirm Payment Receipt</Text>
+                </TouchableOpacity>
+            )}
 
             {/* Support Info */}
             <View style={styles.supportSection}>
