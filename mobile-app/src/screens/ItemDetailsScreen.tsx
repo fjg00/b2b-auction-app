@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { fetchAuctionDetails, placeBid } from '@shared/api';
+import { fetchLotById, placeBid } from '../services/auctionService';
 import { Lot } from '@shared/types';
 import { Clock, MapPin, Package, Truck, AlertTriangle } from 'lucide-react-native';
+import { useAuth } from '../context/AuthContext';
 
 export default function ItemDetailsScreen({ route, navigation }: any) {
     const { id, isSeller } = route.params;
+    const { user } = useAuth();
     const [lot, setLot] = useState<Lot | undefined>(undefined);
     const [loading, setLoading] = useState(true);
     const [bidAmount, setBidAmount] = useState('');
@@ -18,7 +20,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
 
     const loadDetails = async () => {
         try {
-            const data = await fetchAuctionDetails(id);
+            const data = await fetchLotById(id);
             setLot(data);
             if (data) {
                 setBidAmount(String((data.currentBid || 0) + (data.minBidIncrement || 10)));
@@ -31,7 +33,10 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
     };
 
     const handleBid = async () => {
-        if (!lot) return;
+        if (!lot || !user) {
+            Alert.alert('Error', 'You must be logged in to place a bid');
+            return;
+        }
         const amount = Number(bidAmount);
         if (isNaN(amount) || amount <= lot.currentBid) {
             Alert.alert('Invalid Bid', 'Bid must be higher than current bid');
@@ -40,7 +45,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
 
         setSubmitting(true);
         try {
-            const result = await placeBid(lot.id, amount);
+            const result = await placeBid(lot.id, amount, user.id);
             if (result.success) {
                 Alert.alert('Success', result.message);
                 loadDetails(); // Refresh

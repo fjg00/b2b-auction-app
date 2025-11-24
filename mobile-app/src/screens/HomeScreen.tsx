@@ -3,7 +3,7 @@ import { View, FlatList, StyleSheet, ActivityIndicator, TextInput, Text } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { LotCard } from '../components/LotCard';
-import { fetchAuctions } from '@shared/api';
+import { fetchAuctionsFromSupabase } from '../services/auctionService';
 import { Lot } from '@shared/types';
 import { Search } from 'lucide-react-native';
 
@@ -20,11 +20,17 @@ export default function HomeScreen({ navigation }: any) {
     const loadAuctions = async () => {
         setLoading(true);
         try {
-            const data = await fetchAuctions();
+            const data = await fetchAuctionsFromSupabase();
             // Filter out won items - they should only appear in My Bids
+            // Note: Supabase query could handle this filter too
+            // Filter out won items and deduplicate by ID
             const activeAuctions = data.filter(item => item.status !== 'won');
-            setAuctions(activeAuctions);
-            setFilteredAuctions(activeAuctions);
+
+            // Deduplicate by ID just in case
+            const uniqueAuctions = Array.from(new Map(activeAuctions.map(item => [item.id, item])).values());
+
+            setAuctions(uniqueAuctions);
+            setFilteredAuctions(uniqueAuctions);
         } catch (error) {
             console.error('Error loading auctions:', error);
         } finally {

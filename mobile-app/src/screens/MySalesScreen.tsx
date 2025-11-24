@@ -1,27 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { SellerLotCard } from '../components/SellerLotCard';
-import { fetchAuctions } from '@shared/api';
+import { fetchMySales } from '../services/auctionService';
 import { Lot } from '@shared/types';
 import { PlusCircle } from 'lucide-react-native';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function MySalesScreen({ navigation }: any) {
+    const { user } = useAuth();
     const [sales, setSales] = useState<Lot[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadSales();
-    }, []);
+        if (user) {
+            loadSales();
+        }
+    }, [user]);
 
     const loadSales = async () => {
+        if (!user) return;
         setLoading(true);
         try {
-            const data = await fetchAuctions();
-            // Filter to show only items this seller has listed
-            // In a real app, this would filter by seller ID
-            // For now, we'll show all items as if they're the seller's
+            const data = await fetchMySales(user.id);
             setSales(data);
         } catch (error) {
             console.error('Error loading sales:', error);
@@ -31,8 +34,6 @@ export default function MySalesScreen({ navigation }: any) {
     };
 
     const handlePress = (item: Lot) => {
-        // If item is sold/won, go to seller transaction screen
-        // Otherwise, go to item details (to edit or view)
         if (item.status === 'won') {
             navigation.navigate('Transaction', { lotId: item.id, role: 'seller' });
         } else {
@@ -44,6 +45,14 @@ export default function MySalesScreen({ navigation }: any) {
         navigation.navigate('CreateLot');
     };
 
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -54,7 +63,7 @@ export default function MySalesScreen({ navigation }: any) {
                 </TouchableOpacity>
             </View>
 
-            {sales.length === 0 && !loading ? (
+            {sales.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyTitle}>No items listed yet</Text>
                     <Text style={styles.emptyText}>Start selling by listing your first item</Text>
@@ -82,6 +91,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         padding: SPACING.md,

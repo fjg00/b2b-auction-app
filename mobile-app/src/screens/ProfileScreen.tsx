@@ -4,9 +4,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { User, Settings, LogOut, ChevronRight, CreditCard, Bell, Package } from 'lucide-react-native';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function ProfileScreen({ navigation }: any) {
-    const handleLogout = () => {
-        navigation.replace('Login');
+    const { user, signOut } = useAuth();
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+            // Navigation to Login is handled by RootNavigator
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
     };
 
     return (
@@ -15,8 +24,8 @@ export default function ProfileScreen({ navigation }: any) {
                 <View style={styles.avatarContainer}>
                     <User size={40} color={COLORS.primary} />
                 </View>
-                <Text style={styles.name}>Demo User</Text>
-                <Text style={styles.email}>user@example.com</Text>
+                <Text style={styles.name}>{user?.user_metadata?.full_name || 'User'}</Text>
+                <Text style={styles.email}>{user?.email}</Text>
                 <View style={styles.badge}>
                     <Text style={styles.badgeText}>Verified Buyer</Text>
                 </View>

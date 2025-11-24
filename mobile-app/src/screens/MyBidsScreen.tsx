@@ -1,26 +1,38 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '../constants/theme';
 import { LotCard } from '../components/LotCard';
-import { fetchAuctions } from '@shared/api';
+import { fetchMyBids } from '../services/auctionService';
 import { Lot } from '@shared/types';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function MyBidsScreen({ navigation }: any) {
-    const [lots, setLots] = useState<Lot[]>([]);
+    const { user } = useAuth();
+    const [bids, setBids] = useState<Lot[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadBids();
-    }, []);
+        if (user) {
+            loadBids();
+        }
+    }, [user]);
 
     const loadBids = async () => {
-        const data = await fetchAuctions();
-        // Show items that are won or have bids (simulate "my bids")
-        const myBids = data.filter(item => item.status === 'won' || item.bidsCount && item.bidsCount > 0);
-        setLots(myBids.slice(0, 3)); // Show up to 3 items
+        if (!user) return;
+        setLoading(true);
+        try {
+            const data = await fetchMyBids(user.id);
+            setBids(data);
+        } catch (error) {
+            console.error('Error loading bids:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handlePress = (item: any) => {
+    const handlePress = (item: Lot) => {
         if (item.status === 'won') {
             navigation.navigate('Transaction', { lotId: item.id });
         } else {
@@ -28,18 +40,31 @@ export default function MyBidsScreen({ navigation }: any) {
         }
     };
 
+    if (loading) {
+        return (
+            <View style={styles.center}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>My Bids</Text>
             </View>
             <FlatList
-                data={lots}
+                data={bids}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                     <LotCard lot={item} onPress={() => handlePress(item)} />
                 )}
                 contentContainerStyle={styles.list}
+                ListEmptyComponent={
+                    <View style={styles.center}>
+                        <Text style={{ color: COLORS.textMuted }}>No bids yet</Text>
+                    </View>
+                }
             />
         </SafeAreaView>
     );
@@ -49,6 +74,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: COLORS.background,
+    },
+    center: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         padding: SPACING.md,
@@ -63,5 +93,6 @@ const styles = StyleSheet.create({
     },
     list: {
         padding: SPACING.md,
+        flexGrow: 1,
     },
 });

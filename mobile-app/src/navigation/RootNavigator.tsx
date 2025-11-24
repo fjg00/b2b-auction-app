@@ -64,52 +64,72 @@ function TabNavigator() {
     );
 }
 
+import { useAuth } from '../context/AuthContext';
+import { ActivityIndicator, View } from 'react-native';
+import SignUpScreen from '../screens/SignUpScreen';
+
 export default function RootNavigator() {
+    const { session, loading } = useAuth();
+
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        );
+    }
+
     return (
         <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Main">
-                <Stack.Screen name="Login" component={LoginScreen} />
-                <Stack.Screen name="Main" component={TabNavigator} />
-                <Stack.Screen
-                    name="ItemDetails"
-                    component={ItemDetailsScreen}
-                    options={{
-                        headerShown: true,
-                        title: 'Item Details',
-                        headerTintColor: COLORS.text,
-
-                    }}
-                />
-                <Stack.Screen
-                    name="SellerProfile"
-                    component={SellerProfileScreen}
-                    options={{
-                        headerShown: true,
-                        title: 'Seller Profile',
-                        headerTintColor: COLORS.text,
-
-                    }}
-                />
-                <Stack.Screen
-                    name="Transaction"
-                    component={TransactionScreen}
-                    options={{
-                        headerShown: true,
-                        title: 'Transaction Details',
-                        headerTintColor: COLORS.text,
-
-                    }}
-                />
-                <Stack.Screen
-                    name="CreateLot"
-                    component={CreateLotScreen}
-                    options={{
-                        headerShown: true,
-                        title: 'Create New Lot',
-                        headerTintColor: COLORS.text,
-                    }}
-                />
-
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+                {!session ? (
+                    // Auth Stack
+                    <>
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                        <Stack.Screen name="SignUp" component={SignUpScreen} />
+                    </>
+                ) : (
+                    // App Stack
+                    <>
+                        <Stack.Screen name="Main" component={TabNavigator} />
+                        <Stack.Screen
+                            name="ItemDetails"
+                            component={ItemDetailsScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Item Details',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="SellerProfile"
+                            component={SellerProfileScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Seller Profile',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Transaction"
+                            component={TransactionScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Transaction Details',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="CreateLot"
+                            component={CreateLotScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Create New Lot',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                    </>
+                )}
             </Stack.Navigator>
         </NavigationContainer>
     );

@@ -1,0 +1,6 @@
+id,email,full_name,role,phone,created_at
+a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11,seller1@example.com,John Seller,SELLER,+9613000001,2023-11-01T10:00:00Z
+b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a22,seller2@example.com,Sarah Merchant,SELLER,+9613000002,2023-11-02T11:00:00Z
+c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a33,buyer1@example.com,Mike Bidder,BUYER,+9613000003,2023-11-03T12:00:00Z
+d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a44,buyer2@example.com,Lisa Collector,BUYER,+9613000004,2023-11-04T13:00:00Z
+e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a55,admin@example.com,Admin User,ADMIN,+9613000005,2023-11-05T14:00:00Z
