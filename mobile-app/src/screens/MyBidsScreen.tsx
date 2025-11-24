@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, FlatList, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, FlatList, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING } from '../constants/theme';
 import { LotCard } from '../components/LotCard';
 import { fetchMyBids } from '../services/auctionService';
 import { Lot } from '@shared/types';
-
 import { useAuth } from '../context/AuthContext';
 
 export default function MyBidsScreen({ navigation }: any) {
@@ -13,11 +13,13 @@ export default function MyBidsScreen({ navigation }: any) {
     const [bids, setBids] = useState<Lot[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) {
-            loadBids();
-        }
-    }, [user]);
+    useFocusEffect(
+        useCallback(() => {
+            if (user) {
+                loadBids();
+            }
+        }, [user])
+    );
 
     const loadBids = async () => {
         if (!user) return;

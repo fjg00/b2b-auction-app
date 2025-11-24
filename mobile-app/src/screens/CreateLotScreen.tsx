@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { createLot } from '@shared/api';
+import { createLot } from '../services/auctionService';
+import { useAuth } from '../context/AuthContext';
 import { PRODUCT_CATEGORIES, CONDITION_CATEGORIES } from '@shared/constants';
 import { Package, DollarSign, Upload, Calendar, ChevronDown, X } from 'lucide-react-native';
 
 export default function CreateLotScreen({ navigation }: any) {
+    const { user } = useAuth();
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
@@ -49,13 +51,20 @@ export default function CreateLotScreen({ navigation }: any) {
             return;
         }
 
+        if (!user) {
+            Alert.alert('Error', 'You must be logged in to create a lot');
+            return;
+        }
+
         setSubmitting(true);
         try {
-            const result = await createLot(formData);
+            const result = await createLot(formData, user.id);
             if (result.success) {
                 Alert.alert('Success', result.message, [
                     { text: 'OK', onPress: () => navigation.goBack() }
                 ]);
+            } else {
+                Alert.alert('Error', result.message);
             }
         } catch (error) {
             Alert.alert('Error', 'Failed to create lot');

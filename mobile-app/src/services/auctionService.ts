@@ -8,6 +8,7 @@ export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
         const { data: lots, error } = await supabase
             .from('lots')
             .select('*')
+            .eq('status', 'ACTIVE')
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -17,26 +18,37 @@ export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
 
         if (!lots) return [];
 
+        // Fetch all bids to calculate current bid for each lot
+        const { data: allBids } = await supabase
+            .from('bids')
+            .select('lot_id, amount');
+
+        // Create a map of lot_id -> max bid
+        const maxBidsMap = new Map<string, number>();
+        allBids?.forEach((bid: any) => {
+            const currentMax = maxBidsMap.get(bid.lot_id) || 0;
+            maxBidsMap.set(bid.lot_id, Math.max(currentMax, bid.amount));
+        });
+
         // Map database snake_case to UI camelCase
         return lots.map((lot: any) => ({
             id: lot.id,
             title: lot.title,
-            // Use a placeholder image since we don't have storage yet
             image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
             images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
-            location: 'Beirut, Lebanon', // Default for now
-            expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Mock expiry
-            condition: 'Overstock', // Default valid condition
-            currentBid: lot.start_price, // Start price as current bid for now
+            location: 'Beirut, Lebanon',
+            expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            condition: 'Overstock',
+            currentBid: maxBidsMap.get(lot.id) || lot.start_price,
             minBidIncrement: lot.min_bid_increment,
             buyNowPrice: lot.buy_now_price,
             endTime: new Date(lot.end_time),
-            status: lot.status.toLowerCase(), // 'ACTIVE' -> 'active'
-            bidsCount: 0, // We'll fetch this later
+            status: lot.status.toLowerCase(),
+            bidsCount: 0,
             watchCount: 0,
             description: lot.description,
             seller: {
-                name: 'Unknown Seller', // We need to join users table for this
+                name: 'Unknown Seller',
                 rating: 5.0,
                 location: 'Beirut, Lebanon',
             },
@@ -66,10 +78,23 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
         if (error) throw error;
         if (!bids) return [];
 
+        // Group bids by lot_id to find max bid for each lot
+        const lotBidsMap = new Map<string, number>();
+        bids.forEach((bid: any) => {
+            const lotId = bid.lot?.id;
+            if (lotId) {
+                const currentMax = lotBidsMap.get(lotId) || 0;
+                lotBidsMap.set(lotId, Math.max(currentMax, bid.amount));
+            }
+        });
+
         // Map the joined data to our Lot interface
         const lots = bids.map((bid: any) => {
             const lot = bid.lot;
             if (!lot) return null;
+
+            // Get the max bid for this lot
+            const maxBid = lotBidsMap.get(lot.id) || lot.start_price;
 
             return {
                 id: lot.id,
@@ -79,7 +104,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
                 location: 'Beirut, Lebanon',
                 expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 condition: 'Overstock',
-                currentBid: lot.start_price,
+                currentBid: maxBid,
                 minBidIncrement: lot.min_bid_increment,
                 buyNowPrice: lot.buy_now_price,
                 endTime: new Date(lot.end_time),
@@ -207,7 +232,7 @@ export const placeBid = async (lotId: string, amount: number, userId: string): P
         // Ideally this is done via a Database Function to prevent race conditions
         const { data: lot, error: lotError } = await supabase
             .from('lots')
-            .select('start_price, min_bid_increment') // We should also check max(bids.amount) but keeping it simple
+            .select('start_price, min_bid_increment')
             .eq('id', lotId)
             .single();
 
@@ -234,6 +259,36 @@ export const placeBid = async (lotId: string, amount: number, userId: string): P
         return { success: true, message: 'Bid placed successfully!' };
     } catch (error) {
         console.error('Unexpected error placing bid:', error);
+        return { success: false, message: 'An unexpected error occurred.' };
+    }
+};
+
+export const createLot = async (formData: any, userId: string): Promise<{ success: boolean; message: string }> => {
+    try {
+        const { error } = await supabase
+            .from('lots')
+            .insert([
+                {
+                    seller_id: userId,
+                    title: formData.title,
+                    description: formData.description || '',
+                    start_price: parseFloat(formData.startBid),
+                    min_bid_increment: 10, // Default
+                    buy_now_price: formData.buyNow ? parseFloat(formData.buyNow) : null,
+                    status: 'ACTIVE',
+                    start_time: new Date().toISOString(),
+                    end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
+                }
+            ]);
+
+        if (error) {
+            console.error('Error creating lot:', error);
+            return { success: false, message: 'Failed to create lot. Please try again.' };
+        }
+
+        return { success: true, message: 'Lot created successfully!' };
+    } catch (error) {
+        console.error('Unexpected error creating lot:', error);
         return { success: false, message: 'An unexpected error occurred.' };
     }
 };
