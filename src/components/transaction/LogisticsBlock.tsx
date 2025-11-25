@@ -6,7 +6,7 @@ import { Truck, MapPin, Phone, User } from 'lucide-react';
 
 interface LogisticsBlockProps {
     role: 'buyer' | 'seller';
-    status: 'pending' | 'scheduled' | 'completed';
+    status: 'locked' | 'pending' | 'scheduled' | 'completed';
     method: 'pickup' | 'delivery';
     address: string;
     scheduledDate?: string;

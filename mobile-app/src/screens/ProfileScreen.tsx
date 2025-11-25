@@ -32,25 +32,49 @@ export default function ProfileScreen({ navigation }: any) {
             </View>
 
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Account</Text>
+                <Text style={styles.sectionTitle}>Profile & Business</Text>
 
-                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SellerProfile', { id: '1' })}>
-                    <View style={styles.menuIcon}>
-                        <User size={20} color={COLORS.primary} />
-                    </View>
-                    <Text style={styles.menuText}>View Demo Seller Profile</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.menuItem}>
+                <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => navigation.navigate('EditProfile')}
+                >
                     <View style={styles.menuIcon}>
                         <User size={20} color={COLORS.text} />
                     </View>
-                    <Text style={styles.menuText}>Personal Information</Text>
+                    <Text style={styles.menuText}>Edit Profile</Text>
                     <ChevronRight size={20} color={COLORS.textMuted} />
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.menuItem}>
+                <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => navigation.navigate('Verification')}
+                >
+                    <View style={styles.menuIcon}>
+                        <Settings size={20} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.menuText}>Business Verification</Text>
+                    <ChevronRight size={20} color={COLORS.textMuted} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => navigation.navigate('Addresses')}
+                >
+                    <View style={styles.menuIcon}>
+                        <Package size={20} color={COLORS.text} />
+                    </View>
+                    <Text style={styles.menuText}>Addresses</Text>
+                    <ChevronRight size={20} color={COLORS.textMuted} />
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Payments & Billing</Text>
+
+                <TouchableOpacity
+                    style={styles.menuItem}
+                    onPress={() => navigation.navigate('PaymentMethods')}
+                >
                     <View style={styles.menuIcon}>
                         <CreditCard size={20} color={COLORS.text} />
                     </View>
@@ -69,9 +93,18 @@ export default function ProfileScreen({ navigation }: any) {
 
             <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Developer / Testing</Text>
+
+                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SellerProfile', { id: '1' })}>
+                    <View style={styles.menuIcon}>
+                        <User size={20} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.menuText}>View Demo Seller Profile</Text>
+                    <ChevronRight size={20} color={COLORS.textMuted} />
+                </TouchableOpacity>
+
                 <TouchableOpacity
                     style={styles.menuItem}
-                    onPress={() => navigation.navigate('SellerTransaction', { transactionId: 'TX-12345' })}
+                    onPress={() => navigation.navigate('Transaction', { transactionId: 'TX-12345' })}
                 >
                     <View style={styles.menuIcon}>
                         <Package size={20} color={COLORS.primary} />

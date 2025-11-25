@@ -10,21 +10,38 @@ interface LotCardProps {
 }
 
 export const LotCard: React.FC<LotCardProps> = ({ lot, onPress }) => {
-    const getTimeRemaining = () => {
-        const now = new Date();
-        const end = new Date(lot.endTime);
-        const diff = end.getTime() - now.getTime();
+    const [timeLeft, setTimeLeft] = React.useState('');
 
-        if (diff <= 0) return 'Ended';
+    React.useEffect(() => {
+        const updateTimer = () => {
+            const now = new Date();
+            const end = new Date(lot.endTime);
+            const diff = end.getTime() - now.getTime();
 
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            if (diff <= 0) {
+                setTimeLeft('Ended');
+                return;
+            }
 
-        if (days > 0) return `${days}d ${hours}h`;
-        if (hours > 0) return `${hours}h ${minutes}m`;
-        return `${minutes}m`;
-    };
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            if (days > 0) {
+                setTimeLeft(`${days}d ${hours}h`);
+            } else if (hours > 0) {
+                setTimeLeft(`${hours}h ${minutes}m`);
+            } else {
+                setTimeLeft(`${minutes}m ${seconds}s`);
+            }
+        };
+
+        updateTimer(); // Initial call
+        const interval = setInterval(updateTimer, 1000);
+
+        return () => clearInterval(interval);
+    }, [lot.endTime]);
 
     return (
         <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
@@ -56,7 +73,7 @@ export const LotCard: React.FC<LotCardProps> = ({ lot, onPress }) => {
                     ) : (
                         <View style={styles.timer}>
                             <Clock size={14} color={COLORS.error} />
-                            <Text style={styles.timerText}>{getTimeRemaining()}</Text>
+                            <Text style={styles.timerText}>{timeLeft}</Text>
                         </View>
                     )}
                 </View>

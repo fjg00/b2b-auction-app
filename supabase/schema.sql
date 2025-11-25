@@ -47,3 +47,22 @@ create table if not exists bids (
 create index if not exists idx_bids_lot_id_created_at on bids(lot_id, created_at desc);
 create index if not exists idx_lots_status_end_time on lots(status, end_time);
 create index if not exists idx_users_email on users(email);
+
+-- Transactions Table
+create type transaction_status as enum ('PENDING_PAYMENT', 'PAYMENT_VERIFICATION', 'PAID', 'COMPLETED', 'CANCELLED');
+
+create table if not exists transactions (
+  id uuid primary key default gen_random_uuid(),
+  lot_id uuid not null references lots(id),
+  buyer_id uuid not null references users(id),
+  seller_id uuid not null references users(id),
+  amount decimal not null,
+  status transaction_status default 'PENDING_PAYMENT',
+  payment_proof_url text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists idx_transactions_lot_id on transactions(lot_id);
+create index if not exists idx_transactions_buyer_id on transactions(buyer_id);
+create index if not exists idx_transactions_seller_id on transactions(seller_id);

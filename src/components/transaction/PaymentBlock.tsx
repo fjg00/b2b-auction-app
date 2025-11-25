@@ -7,7 +7,7 @@ interface PaymentBlockProps {
     winningBid: number;
     platformFees: number;
     taxes: number;
-    status: 'awaiting_payment' | 'paid' | 'scheduled' | 'completed';
+    status: 'awaiting_payment' | 'payment_verification' | 'paid' | 'scheduled' | 'completed';
     role: 'buyer' | 'seller';
 }
 
@@ -62,25 +62,7 @@ export const PaymentBlock = ({
             {/* Action Buttons - Compact and Centered */}
             {role === 'buyer' && !isPaid && (
                 <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                    <button
-                        style={{
-                            width: '100%',
-                            maxWidth: '320px',
-                            height: '44px',
-                            borderRadius: '9999px',
-                            backgroundColor: '#16a34a',
-                            color: 'white',
-                            fontSize: '16px',
-                            fontWeight: 500,
-                            border: 'none',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#15803d'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#16a34a'}
-                    >
-                        Pay Now
-                    </button>
+
                     <button
                         style={{
                             width: '100%',

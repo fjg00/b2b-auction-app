@@ -67,6 +67,10 @@ function TabNavigator() {
 import { useAuth } from '../context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 import SignUpScreen from '../screens/SignUpScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import VerificationScreen from '../screens/VerificationScreen';
+import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
+import AddressesScreen from '../screens/AddressesScreen';
 
 export default function RootNavigator() {
     const { session, loading } = useAuth();
@@ -125,6 +129,42 @@ export default function RootNavigator() {
                             options={{
                                 headerShown: true,
                                 title: 'Create New Lot',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="EditProfile"
+                            component={EditProfileScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Edit Profile',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Verification"
+                            component={VerificationScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Business Verification',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="PaymentMethods"
+                            component={PaymentMethodsScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'Payment Methods',
+                                headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Addresses"
+                            component={AddressesScreen}
+                            options={{
+                                headerShown: true,
+                                title: 'My Addresses',
                                 headerTintColor: COLORS.text,
                             }}
                         />

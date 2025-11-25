@@ -14,11 +14,11 @@ interface SellerTimelineProps {
 
 export const SellerTimeline = ({ events }: SellerTimelineProps) => {
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Transaction Timeline</h3>
-            <div className="relative">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-6">Transaction Timeline</h3>
+            <div className="relative pl-2">
                 {/* Connecting Line */}
-                <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-gray-100" />
+                <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-slate-100" />
 
                 <div className="space-y-8">
                     {events.map((event, index) => {
@@ -28,22 +28,22 @@ export const SellerTimeline = ({ events }: SellerTimelineProps) => {
                         return (
                             <div key={event.id} className="relative flex items-start gap-4">
                                 {/* Icon */}
-                                <div className={`relative z-10 flex items-center justify-center w-12 h-12 rounded-full border-4 ${isCompleted ? 'bg-green-100 border-white text-green-600' :
-                                        isCurrent ? 'bg-amber-100 border-white text-amber-600' :
-                                            'bg-gray-50 border-white text-gray-300'
+                                <div className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full border-2 ${isCompleted ? 'bg-blue-100 border-blue-600 text-blue-600' :
+                                        isCurrent ? 'bg-white border-blue-600 text-blue-600' :
+                                            'bg-white border-slate-200 text-slate-300'
                                     }`}>
-                                    {isCompleted ? <CheckCircle size={20} /> :
-                                        isCurrent ? <Clock size={20} /> :
-                                            <Circle size={20} />}
+                                    {isCompleted ? <CheckCircle size={16} /> :
+                                        isCurrent ? <Circle size={16} fill="currentColor" className="text-blue-600" /> :
+                                            <Circle size={16} />}
                                 </div>
 
                                 {/* Content */}
-                                <div className="pt-2">
-                                    <div className={`font-medium ${isCurrent ? 'text-gray-900' : 'text-gray-600'}`}>
+                                <div className="pt-1">
+                                    <div className={`font-medium text-sm ${isCurrent || isCompleted ? 'text-slate-900' : 'text-slate-500'}`}>
                                         {event.label}
                                     </div>
                                     {event.date && (
-                                        <div className="text-sm text-gray-400 mt-1">
+                                        <div className="text-xs text-slate-400 mt-0.5">
                                             {event.date}
                                         </div>
                                     )}

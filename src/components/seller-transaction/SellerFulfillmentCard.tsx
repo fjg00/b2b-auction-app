@@ -12,50 +12,47 @@ export const SellerFulfillmentCard = ({ status, onConfirmReady, onReportIssue }:
         switch (status) {
             case 'AWAITING_BUYER_PAYMENT':
                 return (
-                    <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                        <Info className="text-gray-400 shrink-0 mt-0.5" size={20} />
-                        <div>
-                            <h4 className="font-medium text-gray-900">Waiting for Payment</h4>
-                            <p className="text-sm text-gray-600 mt-1">
-                                Waiting for the buyer to complete payment. You don’t need to do anything yet.
-                            </p>
+                    <div>
+                        <div className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-3 py-1 text-xs font-medium mb-3">
+                            Awaiting buyer payment
                         </div>
+                        <p className="text-sm text-slate-600">
+                            Waiting for the buyer to complete payment. You don’t need to do anything yet.
+                        </p>
                     </div>
                 );
             case 'PAYMENT_UNDER_REVIEW':
                 return (
-                    <div className="flex items-start gap-4 p-4 bg-amber-50 rounded-lg border border-amber-100">
-                        <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={20} />
-                        <div>
-                            <h4 className="font-medium text-amber-900">Payment Under Review</h4>
-                            <p className="text-sm text-amber-700 mt-1">
-                                Buyer payment is being verified by the platform. Please do not release goods yet.
-                            </p>
+                    <div>
+                        <div className="inline-flex items-center rounded-full bg-yellow-100 text-yellow-800 px-3 py-1 text-xs font-medium mb-3">
+                            Payment under review
                         </div>
+                        <p className="text-sm text-slate-600">
+                            Buyer payment is being verified by the platform. Please do not release goods yet.
+                        </p>
                     </div>
                 );
             case 'READY_FOR_RELEASE':
                 return (
                     <div className="space-y-4">
-                        <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-100">
-                            <CheckCircle className="text-green-600 shrink-0 mt-0.5" size={20} />
-                            <div>
-                                <h4 className="font-medium text-green-900">Payment Verified</h4>
-                                <p className="text-sm text-green-700 mt-1">
-                                    Payment has been secured. Please confirm the goods are available and ready for pickup/shipping.
-                                </p>
+                        <div>
+                            <div className="inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs font-medium mb-3">
+                                Payment Verified
                             </div>
+                            <p className="text-sm text-slate-600">
+                                Payment has been secured. Please confirm the goods are available and ready for pickup/shipping.
+                            </p>
                         </div>
                         <div className="flex gap-3">
                             <button
                                 onClick={onConfirmReady}
-                                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors"
+                                className="bg-blue-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
                             >
-                                Confirm Goods Ready
+                                Mark as ready for release
                             </button>
                             <button
                                 onClick={onReportIssue}
-                                className="px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-50 rounded-lg border border-gray-300 transition-colors"
+                                className="px-4 py-2 text-slate-700 text-sm font-medium hover:bg-slate-50 rounded-lg border border-slate-300 transition-colors"
                             >
                                 Report Issue
                             </button>
@@ -65,14 +62,13 @@ export const SellerFulfillmentCard = ({ status, onConfirmReady, onReportIssue }:
             case 'HANDED_OVER':
             case 'COMPLETED':
                 return (
-                    <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                        <Package className="text-blue-600 shrink-0 mt-0.5" size={20} />
-                        <div>
-                            <h4 className="font-medium text-blue-900">Goods Handed Over</h4>
-                            <p className="text-sm text-blue-700 mt-1">
-                                Goods were marked as handed over. Payout will be processed shortly.
-                            </p>
+                    <div>
+                        <div className="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-3 py-1 text-xs font-medium mb-3">
+                            Goods Handed Over
                         </div>
+                        <p className="text-sm text-slate-600">
+                            Goods were marked as handed over. Payout will be processed shortly.
+                        </p>
                     </div>
                 );
             default:
@@ -81,8 +77,8 @@ export const SellerFulfillmentCard = ({ status, onConfirmReady, onReportIssue }:
     };
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Fulfillment Status</h3>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Fulfillment Status</h3>
             {renderContent()}
         </div>
     );
