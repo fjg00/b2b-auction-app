@@ -251,6 +251,26 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         <Text style={styles.deadlineText}>Buyer must pay by: {transaction.dueDate}</Text>
                     </View>
 
+                    {/* Payout Breakdown */}
+                    <Text style={styles.sectionHeader}>Payout Breakdown ({transaction.currency})</Text>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Winning Bid</Text>
+                        <Text style={styles.detailValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Platform Fee (0%)</Text>
+                        <Text style={styles.detailValue}>- {transaction.currency} $0.00</Text>
+                    </View>
+
+                    <View style={styles.totalDivider} />
+
+                    <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Net Payout</Text>
+                        <Text style={styles.totalValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
                     <Text style={styles.instructionText}>
                         The buyer has been notified to send payment. You will be able to confirm receipt once the funds arrive in your account.
                     </Text>
