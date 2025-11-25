@@ -245,6 +245,12 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         <Text style={styles.payoutSubtext}>After buyer payment is confirmed</Text>
                     </View>
 
+                    {/* Buyer Payment Deadline */}
+                    <View style={styles.deadlineBox}>
+                        <Clock size={18} color={COLORS.error} />
+                        <Text style={styles.deadlineText}>Buyer must pay by: {transaction.dueDate}</Text>
+                    </View>
+
                     <Text style={styles.instructionText}>
                         The buyer has been notified to send payment. You will be able to confirm receipt once the funds arrive in your account.
                     </Text>
