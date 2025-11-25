@@ -71,6 +71,7 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import VerificationScreen from '../screens/VerificationScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
 import AddressesScreen from '../screens/AddressesScreen';
+import TransactionConfirmationScreen from '../screens/TransactionConfirmationScreen';
 
 export default function RootNavigator() {
     const { session, loading } = useAuth();
@@ -166,6 +167,13 @@ export default function RootNavigator() {
                                 headerShown: true,
                                 title: 'My Addresses',
                                 headerTintColor: COLORS.text,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="TransactionConfirmation"
+                            component={TransactionConfirmationScreen}
+                            options={{
+                                headerShown: false, // Custom header in screen
                             }}
                         />
                     </>

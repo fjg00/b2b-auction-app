@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { User, Settings, LogOut, ChevronRight, CreditCard, Bell, Package } from 'lucide-react-native';
+import { User, Settings, LogOut, ChevronRight, CreditCard, Bell, Package, CheckCircle } from 'lucide-react-native';
 
 import { useAuth } from '../context/AuthContext';
 
@@ -20,110 +20,123 @@ export default function ProfileScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.avatarContainer}>
-                    <User size={40} color={COLORS.primary} />
+            <ScrollView contentContainerStyle={{ paddingBottom: SPACING.xl }}>
+                <View style={styles.header}>
+                    <View style={styles.avatarContainer}>
+                        <User size={40} color={COLORS.primary} />
+                    </View>
+                    <Text style={styles.name}>{user?.user_metadata?.full_name || 'User'}</Text>
+                    <Text style={styles.email}>{user?.email}</Text>
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>Verified Buyer</Text>
+                    </View>
                 </View>
-                <Text style={styles.name}>{user?.user_metadata?.full_name || 'User'}</Text>
-                <Text style={styles.email}>{user?.email}</Text>
-                <View style={styles.badge}>
-                    <Text style={styles.badgeText}>Verified Buyer</Text>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Profile & Business</Text>
+
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={() => navigation.navigate('EditProfile')}
+                    >
+                        <View style={styles.menuIcon}>
+                            <User size={20} color={COLORS.text} />
+                        </View>
+                        <Text style={styles.menuText}>Edit Profile</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={() => navigation.navigate('Verification')}
+                    >
+                        <View style={styles.menuIcon}>
+                            <Settings size={20} color={COLORS.primary} />
+                        </View>
+                        <Text style={styles.menuText}>Business Verification</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={() => navigation.navigate('Addresses')}
+                    >
+                        <View style={styles.menuIcon}>
+                            <Package size={20} color={COLORS.text} />
+                        </View>
+                        <Text style={styles.menuText}>Addresses</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
                 </View>
-            </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Profile & Business</Text>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Payments & Billing</Text>
 
-                <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => navigation.navigate('EditProfile')}
-                >
-                    <View style={styles.menuIcon}>
-                        <User size={20} color={COLORS.text} />
-                    </View>
-                    <Text style={styles.menuText}>Edit Profile</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={() => navigation.navigate('PaymentMethods')}
+                    >
+                        <View style={styles.menuIcon}>
+                            <CreditCard size={20} color={COLORS.text} />
+                        </View>
+                        <Text style={styles.menuText}>Payment Methods</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => navigation.navigate('Verification')}
-                >
-                    <View style={styles.menuIcon}>
-                        <Settings size={20} color={COLORS.primary} />
-                    </View>
-                    <Text style={styles.menuText}>Business Verification</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem}>
+                        <View style={styles.menuIcon}>
+                            <Bell size={20} color={COLORS.text} />
+                        </View>
+                        <Text style={styles.menuText}>Notifications</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
+                </View>
 
-                <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => navigation.navigate('Addresses')}
-                >
-                    <View style={styles.menuIcon}>
-                        <Package size={20} color={COLORS.text} />
-                    </View>
-                    <Text style={styles.menuText}>Addresses</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
-            </View>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Developer / Testing</Text>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Payments & Billing</Text>
+                    <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SellerProfile', { id: '1' })}>
+                        <View style={styles.menuIcon}>
+                            <User size={20} color={COLORS.primary} />
+                        </View>
+                        <Text style={styles.menuText}>View Demo Seller Profile</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => navigation.navigate('PaymentMethods')}
-                >
-                    <View style={styles.menuIcon}>
-                        <CreditCard size={20} color={COLORS.text} />
-                    </View>
-                    <Text style={styles.menuText}>Payment Methods</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={() => navigation.navigate('Transaction', { transactionId: 'TX-12345' })}
+                    >
+                        <View style={styles.menuIcon}>
+                            <Package size={20} color={COLORS.primary} />
+                        </View>
+                        <Text style={styles.menuText}>View Seller Transaction (Test)</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
 
-                <TouchableOpacity style={styles.menuItem}>
-                    <View style={styles.menuIcon}>
-                        <Bell size={20} color={COLORS.text} />
-                    </View>
-                    <Text style={styles.menuText}>Notifications</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
-            </View>
+                    <TouchableOpacity
+                        style={styles.menuItem}
+                        onPress={() => navigation.navigate('TransactionConfirmation')}
+                    >
+                        <View style={styles.menuIcon}>
+                            <CheckCircle size={20} color={COLORS.primary} />
+                        </View>
+                        <Text style={styles.menuText}>Test Transaction Confirmation</Text>
+                        <ChevronRight size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
+                </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Developer / Testing</Text>
-
-                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SellerProfile', { id: '1' })}>
-                    <View style={styles.menuIcon}>
-                        <User size={20} color={COLORS.primary} />
-                    </View>
-                    <Text style={styles.menuText}>View Demo Seller Profile</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={() => navigation.navigate('Transaction', { transactionId: 'TX-12345' })}
-                >
-                    <View style={styles.menuIcon}>
-                        <Package size={20} color={COLORS.primary} />
-                    </View>
-                    <Text style={styles.menuText}>View Seller Transaction (Test)</Text>
-                    <ChevronRight size={20} color={COLORS.textMuted} />
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>App Settings</Text>
-                <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-                    <View style={styles.menuIcon}>
-                        <LogOut size={20} color={COLORS.error} />
-                    </View>
-                    <Text style={[styles.menuText, { color: COLORS.error }]}>Log Out</Text>
-                </TouchableOpacity>
-            </View>
-        </SafeAreaView >
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>App Settings</Text>
+                    <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+                        <View style={styles.menuIcon}>
+                            <LogOut size={20} color={COLORS.error} />
+                        </View>
+                        <Text style={[styles.menuText, { color: COLORS.error }]}>Log Out</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
