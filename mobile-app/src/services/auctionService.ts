@@ -52,6 +52,7 @@ export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
                 rating: 5.0,
                 location: 'Beirut, Lebanon',
             },
+            seller_id: lot.seller_id,
             details: {
                 quantity: '1 Unit',
                 weight: 'N/A',
@@ -113,6 +114,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
                 watchCount: 0,
                 description: lot.description,
                 seller: { name: 'Unknown', rating: 5, location: 'Beirut' },
+                seller_id: lot.seller_id,
                 details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
                 bids: []
             };
@@ -156,6 +158,7 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
             watchCount: 0,
             description: lot.description,
             seller: { name: 'Me', rating: 5, location: 'Beirut' },
+            seller_id: lot.seller_id,
             details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
             bids: []
         }));
@@ -217,6 +220,7 @@ export const fetchLotById = async (id: string): Promise<Lot | undefined> => {
             watchCount: 0,
             description: lot.description,
             seller: { name: 'Unknown Seller', rating: 5, location: 'Beirut' },
+            seller_id: lot.seller_id, // Add seller_id for ownership checks
             details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
             bids: formattedBids
         };
@@ -228,16 +232,20 @@ export const fetchLotById = async (id: string): Promise<Lot | undefined> => {
 
 export const placeBid = async (lotId: string, amount: number, userId: string): Promise<{ success: boolean; message: string }> => {
     try {
-        // 1. Check if bid is valid (higher than current max)
-        // Ideally this is done via a Database Function to prevent race conditions
+        // 1. Check if user is trying to bid on their own lot
         const { data: lot, error: lotError } = await supabase
             .from('lots')
-            .select('start_price, min_bid_increment')
+            .select('seller_id, start_price, min_bid_increment')
             .eq('id', lotId)
             .single();
 
         if (lotError || !lot) {
             return { success: false, message: 'Lot not found' };
+        }
+
+        // Prevent sellers from bidding on their own lots
+        if (lot.seller_id === userId) {
+            return { success: false, message: 'You cannot bid on your own lot' };
         }
 
         // 2. Insert bid

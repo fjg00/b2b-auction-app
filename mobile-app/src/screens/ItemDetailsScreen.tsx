@@ -7,7 +7,7 @@ import { Clock, MapPin, Package, Truck, AlertTriangle } from 'lucide-react-nativ
 import { useAuth } from '../context/AuthContext';
 
 export default function ItemDetailsScreen({ route, navigation }: any) {
-    const { id, isSeller } = route.params;
+    const { id } = route.params;
     const { user } = useAuth();
     const [lot, setLot] = useState<Lot | undefined>(undefined);
     const [loading, setLoading] = useState(true);
@@ -62,6 +62,9 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
     if (loading) return <ActivityIndicator style={styles.center} size="large" color={COLORS.primary} />;
     if (!lot) return <View style={styles.center}><Text>Lot not found</Text></View>;
 
+    // Check if current user is the seller
+    const isOwner = user && lot.seller_id === user.id;
+
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
             <ScrollView style={styles.container}>
@@ -103,7 +106,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                         <Text style={styles.description}>{lot.description}</Text>
                     </View>
 
-                    {!isSeller && (
+                    {!isOwner && (
                         <View style={styles.bidSection}>
                             <Text style={styles.sectionTitle}>Place a Bid</Text>
                             <View style={styles.bidInfo}>
@@ -132,7 +135,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                         </View>
                     )}
 
-                    {isSeller && (
+                    {isOwner && (
                         <View style={styles.sellerInfoBox}>
                             <Text style={styles.sellerInfoTitle}>Your Listing</Text>
                             <Text style={styles.sellerInfoText}>

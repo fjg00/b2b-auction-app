@@ -42,6 +42,7 @@ export interface Lot {
     watchCount?: number;
     description?: string;
     seller?: Seller;
+    seller_id?: string; // ID of the seller user
     details?: LotDetails;
     bids?: Bid[];
     status?: AuctionStatus; // Derived or explicit
