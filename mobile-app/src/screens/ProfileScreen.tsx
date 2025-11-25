@@ -64,7 +64,7 @@ export default function ProfileScreen({ navigation }: any) {
                         <View style={styles.menuIcon}>
                             <Package size={20} color={COLORS.text} />
                         </View>
-                        <Text style={styles.menuText}>Addresses</Text>
+                        <Text style={styles.menuText}>Warehouse Addresses</Text>
                         <ChevronRight size={20} color={COLORS.textMuted} />
                     </TouchableOpacity>
                 </View>
