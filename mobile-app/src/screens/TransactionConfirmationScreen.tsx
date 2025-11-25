@@ -282,19 +282,49 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             </Text>
 
             <View style={styles.logisticsDetails}>
-                <View style={styles.detailRow}>
+                <View style={styles.logisticsRow}>
                     <Truck size={20} color={COLORS.text} />
-                    <Text style={styles.detailValue}>Pickup at Seller's Warehouse</Text>
+                    <View>
+                        <Text style={styles.detailValue}>Pickup at Seller's Warehouse</Text>
+                        <Text style={styles.subDetailText}>
+                            123 Industrial Park, Sector 7{'\n'}
+                            New York, NY 10001
+                        </Text>
+                    </View>
                 </View>
-                <Text style={styles.addressText}>
-                    123 Industrial Park, Sector 7{'\n'}
-                    New York, NY 10001
-                </Text>
+
+                <View style={styles.divider} />
+
+                <View style={styles.logisticsRow}>
+                    <Clock size={20} color={COLORS.text} />
+                    <View>
+                        <Text style={styles.detailValue}>Pickup Window</Text>
+                        <Text style={styles.subDetailText}>Mon - Fri • 9:00 AM - 5:00 PM</Text>
+                    </View>
+                </View>
+
+                <View style={styles.logisticsRow}>
+                    <AlertTriangle size={20} color={COLORS.text} />
+                    <View>
+                        <Text style={styles.detailValue}>Site Instructions</Text>
+                        <Text style={styles.subDetailText}>Enter via Gate 3. Safety vest required.</Text>
+                    </View>
+                </View>
+
+                <View style={styles.logisticsRow}>
+                    <MessageSquare size={20} color={COLORS.text} />
+                    <View>
+                        <Text style={styles.detailValue}>Site Contact</Text>
+                        <Text style={styles.subDetailText}>Mike Ross (Logistics Mgr) • +1 555-0199</Text>
+                    </View>
+                </View>
             </View>
 
-            <TouchableOpacity style={styles.secondaryButton} onPress={() => Alert.alert("Logistics", "Opening logistics details...")}>
-                <Text style={styles.secondaryButtonText}>View Full Logistics Details</Text>
-            </TouchableOpacity>
+            <View style={styles.releaseCodeBox}>
+                <Text style={styles.releaseCodeLabel}>RELEASE CODE</Text>
+                <Text style={styles.releaseCodeValue}>REL-8899-X</Text>
+                <Text style={styles.releaseCodeHint}>Present this code to claim goods</Text>
+            </View>
         </View>
     );
 
@@ -587,6 +617,12 @@ const styles = StyleSheet.create({
     logisticsDetails: {
         marginBottom: SPACING.lg,
     },
+    logisticsRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
+        marginBottom: 16,
+    },
     addressText: {
         marginLeft: 28,
         color: COLORS.textMuted,
@@ -767,6 +803,37 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surface,
     },
     inputText: {
+        color: COLORS.textMuted,
+    },
+    subDetailText: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+    },
+    releaseCodeBox: {
+        marginTop: SPACING.lg,
+        padding: SPACING.md,
+        backgroundColor: '#F0F9FF',
+        borderRadius: RADIUS.md,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        borderStyle: 'dashed',
+    },
+    releaseCodeLabel: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 4,
+    },
+    releaseCodeValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        letterSpacing: 2,
+        marginBottom: 4,
+    },
+    releaseCodeHint: {
+        fontSize: 12,
         color: COLORS.textMuted,
     },
 });
