@@ -152,6 +152,14 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <Text style={styles.infoLabel}>Quantity:</Text>
                     <Text style={styles.infoValue}>{transaction.quantity} units • {transaction.currency} ${transaction.unitPrice} / unit</Text>
                 </View>
+                {role === 'buyer' && (
+                    <View style={styles.infoRow}>
+                        <Text style={styles.infoLabel}>Seller:</Text>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller)}>
+                            <Text style={styles.linkValue}>{transaction.seller}</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
 
             <View style={styles.divider} />
@@ -662,6 +670,12 @@ const styles = StyleSheet.create({
         color: COLORS.text,
         fontWeight: '500',
         marginBottom: 12,
+    },
+    linkValue: {
+        fontSize: 16,
+        color: COLORS.primary,
+        fontWeight: '500',
+        textDecorationLine: 'underline',
     },
     successBox: {
         alignItems: 'center',
