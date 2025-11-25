@@ -199,494 +199,574 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <Text style={styles.detailValue}>US12 3456 7890 1234 5678</Text>
                 </View>
             </View>
-            );
 
-const renderReceiptStep = () => (
-            <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>Verify Payment</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: '#E0F2F1' }]}>
-                        <Text style={[styles.statusText, { color: COLORS.primary }]}>Action Required</Text>
+            {/* Proof of Payment Upload */}
+            <View style={styles.uploadSection}>
+                <Text style={styles.sectionHeader}>Proof of Payment</Text>
+
+                {proofOfPayment ? (
+                    <View style={styles.filePreview}>
+                        <FileText size={24} color={COLORS.primary} />
+                        <Text style={styles.fileName}>{proofOfPayment}</Text>
+                        <TouchableOpacity onPress={() => setProofOfPayment(null)}>
+                            <X size={20} color={COLORS.textMuted} />
+                        </TouchableOpacity>
                     </View>
-                </View>
-
-                <Text style={styles.instructionText}>
-                    The buyer has marked this transaction as paid. Please check your bank account.
-                </Text>
-
-                <View style={styles.infoBox}>
-                    <Text style={styles.infoLabel}>Buyer</Text>
-                    <Text style={styles.infoValue}>{transaction.buyer}</Text>
-                    <Text style={styles.infoLabel}>Amount</Text>
-                    <Text style={styles.infoValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
-                </View>
-
-                {role === 'seller' ? (
-                    <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmReceipt}>
-                        <Text style={styles.primaryButtonText}>Confirm Payment Received</Text>
-                    </TouchableOpacity>
                 ) : (
-                    <View style={styles.waitingBox}>
-                        <Clock size={20} color={COLORS.textMuted} />
-                        <Text style={styles.waitingText}>Waiting for seller to verify receipt...</Text>
-                    </View>
+                    <TouchableOpacity style={styles.uploadButton} onPress={handleUploadProof}>
+                        <Upload size={20} color={COLORS.primary} />
+                        <Text style={styles.uploadButtonText}>Upload Receipt (PDF or Image)</Text>
+                    </TouchableOpacity>
                 )}
             </View>
-            );
 
-const renderLogisticsStep = () => (
-            <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                    <Text style={styles.cardTitle}>Logistics & Handover</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: '#DCFCE7' }]}>
-                        <Text style={[styles.statusText, { color: '#166534' }]}>Ready</Text>
-                    </View>
-                </View>
-
-                <View style={styles.successBox}>
-                    <CheckCircle size={24} color={COLORS.primary} />
-                    <Text style={styles.successText}>Payment Confirmed!</Text>
-                </View>
-
-                <Text style={styles.instructionText}>
-                    The transaction is now ready for handover. Please coordinate the pickup/delivery.
-                </Text>
-
-                <View style={styles.logisticsDetails}>
-                    <View style={styles.detailRow}>
-                        <Truck size={20} color={COLORS.text} />
-                        <Text style={styles.detailValue}>Pickup at Seller's Warehouse</Text>
-                    </View>
-                    <Text style={styles.addressText}>
-                        123 Industrial Park, Sector 7{'\n'}
-                        New York, NY 10001
-                    </Text>
-                </View>
-
-                <TouchableOpacity style={styles.secondaryButton} onPress={() => Alert.alert("Logistics", "Opening logistics details...")}>
-                    <Text style={styles.secondaryButtonText}>View Full Logistics Details</Text>
-                </TouchableOpacity>
-            </View>
-            );
-
-const renderChatBottomSheet = () => (
-            <Modal
-                visible={chatOpen}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setChatOpen(false)}
+            <TouchableOpacity
+                style={[styles.primaryButton, !proofOfPayment && styles.disabledButton]}
+                onPress={handleConfirmPayment}
+                disabled={!proofOfPayment}
             >
-                <View style={styles.modalOverlay}>
-                    <TouchableOpacity
-                        style={styles.modalBackdrop}
-                        activeOpacity={1}
-                        onPress={() => setChatOpen(false)}
-                    />
-                    <View style={styles.bottomSheet}>
-                        <View style={styles.chatHeader}>
-                            <View>
-                                <Text style={styles.chatTitle}>Chat with {role === 'buyer' ? 'Seller' : 'Buyer'}</Text>
-                                <Text style={styles.chatSubtitle}>{role === 'buyer' ? transaction.seller : transaction.buyer}</Text>
-                            </View>
-                            <TouchableOpacity onPress={() => setChatOpen(false)} style={styles.closeButton}>
-                                <X size={24} color={COLORS.text} />
-                            </TouchableOpacity>
-                        </View>
+                <Text style={styles.primaryButtonText}>I Have Sent the Payment</Text>
+            </TouchableOpacity>
+        </View>
+    );
 
-                        <ScrollView style={styles.chatMessages}>
-                            <View style={styles.messageBubble}>
-                                <Text style={styles.messageText}>
-                                    Congratulations on winning the lot! Let me know when you've made the payment.
-                                </Text>
-                                <Text style={styles.messageTime}>10:30 AM</Text>
-                            </View>
-                        </ScrollView>
+    const renderReceiptStep = () => (
+        <View style={styles.card}>
+            <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Verify Payment</Text>
+                <View style={[styles.statusBadge, { backgroundColor: '#E0F2F1' }]}>
+                    <Text style={[styles.statusText, { color: COLORS.primary }]}>Action Required</Text>
+                </View>
+            </View>
 
-                        <View style={styles.chatInputContainer}>
-                            <TouchableOpacity
-                                style={styles.inputButton}
-                                onPress={() => Alert.alert('Chat', 'Opening keyboard...')}
-                            >
-                                <Text style={styles.inputText}>Type a message...</Text>
-                            </TouchableOpacity>
+            <Text style={styles.instructionText}>
+                The buyer has marked this transaction as paid. Please check your bank account.
+            </Text>
+
+            <View style={styles.infoBox}>
+                <Text style={styles.infoLabel}>Buyer</Text>
+                <Text style={styles.infoValue}>{transaction.buyer}</Text>
+                <Text style={styles.infoLabel}>Amount</Text>
+                <Text style={styles.infoValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+            </View>
+
+            {role === 'seller' ? (
+                <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmReceipt}>
+                    <Text style={styles.primaryButtonText}>Confirm Payment Received</Text>
+                </TouchableOpacity>
+            ) : (
+                <View style={styles.waitingBox}>
+                    <Clock size={20} color={COLORS.textMuted} />
+                    <Text style={styles.waitingText}>Waiting for seller to verify receipt...</Text>
+                </View>
+            )}
+        </View>
+    );
+
+    const renderLogisticsStep = () => (
+        <View style={styles.card}>
+            <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Logistics & Handover</Text>
+                <View style={[styles.statusBadge, { backgroundColor: '#DCFCE7' }]}>
+                    <Text style={[styles.statusText, { color: '#166534' }]}>Ready</Text>
+                </View>
+            </View>
+
+            <View style={styles.successBox}>
+                <CheckCircle size={24} color={COLORS.primary} />
+                <Text style={styles.successText}>Payment Confirmed!</Text>
+            </View>
+
+            <Text style={styles.instructionText}>
+                The transaction is now ready for handover. Please coordinate the pickup/delivery.
+            </Text>
+
+            <View style={styles.logisticsDetails}>
+                <View style={styles.detailRow}>
+                    <Truck size={20} color={COLORS.text} />
+                    <Text style={styles.detailValue}>Pickup at Seller's Warehouse</Text>
+                </View>
+                <Text style={styles.addressText}>
+                    123 Industrial Park, Sector 7{'\n'}
+                    New York, NY 10001
+                </Text>
+            </View>
+
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => Alert.alert("Logistics", "Opening logistics details...")}>
+                <Text style={styles.secondaryButtonText}>View Full Logistics Details</Text>
+            </TouchableOpacity>
+        </View>
+    );
+
+    const renderChatBottomSheet = () => (
+        <Modal
+            visible={chatOpen}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={() => setChatOpen(false)}
+        >
+            <View style={styles.modalOverlay}>
+                <TouchableOpacity
+                    style={styles.modalBackdrop}
+                    activeOpacity={1}
+                    onPress={() => setChatOpen(false)}
+                />
+                <View style={styles.bottomSheet}>
+                    <View style={styles.chatHeader}>
+                        <View>
+                            <Text style={styles.chatTitle}>Chat with {role === 'buyer' ? 'Seller' : 'Buyer'}</Text>
+                            <Text style={styles.chatSubtitle}>{role === 'buyer' ? transaction.seller : transaction.buyer}</Text>
                         </View>
+                        <TouchableOpacity onPress={() => setChatOpen(false)} style={styles.closeButton}>
+                            <X size={24} color={COLORS.text} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView style={styles.chatMessages}>
+                        <View style={styles.messageBubble}>
+                            <Text style={styles.messageText}>
+                                Congratulations on winning the lot! Let me know when you've made the payment.
+                            </Text>
+                            <Text style={styles.messageTime}>10:30 AM</Text>
+                        </View>
+                    </ScrollView>
+
+                    <View style={styles.chatInputContainer}>
+                        <TouchableOpacity
+                            style={styles.inputButton}
+                            onPress={() => Alert.alert('Chat', 'Opening keyboard...')}
+                        >
+                            <Text style={styles.inputText}>Type a message...</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
-            </Modal>
-            );
+            </View>
+        </Modal>
+    );
 
-            return (
-            <SafeAreaView style={styles.safeArea}>
-                <ScrollView style={styles.container}>
-                    {renderHeader()}
-                    {renderStepper()}
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <ScrollView style={styles.container}>
+                {renderHeader()}
+                {renderStepper()}
 
-                    <View style={styles.content}>
-                        {step === 'payment' && renderPaymentStep()}
-                        {step === 'receipt' && renderReceiptStep()}
-                        header: {
-                            padding: SPACING.md,
-                        backgroundColor: COLORS.surface,
-                        borderBottomWidth: 1,
-                        borderBottomColor: COLORS.border,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-    },
-                        backButton: {
-                            marginRight: SPACING.md,
-    },
-                        backButtonText: {
-                            color: COLORS.primary,
-                        fontSize: 16,
-    },
-                        headerContent: {
-                            flex: 1,
-    },
-                        title: {
-                            fontSize: 18,
-                        fontWeight: 'bold',
-                        color: COLORS.text,
-    },
-                        subtitle: {
-                            fontSize: 14,
-                        color: COLORS.textMuted,
-    },
-                        devToggle: {
-                            backgroundColor: '#eee',
-                        padding: 4,
-                        borderRadius: 4,
-    },
-                        devToggleText: {
-                            fontSize: 10,
-                        fontWeight: 'bold',
-    },
-                        stepperContainer: {
-                            flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: SPACING.lg,
-                        backgroundColor: COLORS.surface,
-                        marginBottom: SPACING.md,
-    },
-                        stepItem: {
-                            alignItems: 'center',
-                        zIndex: 1,
-    },
-                        stepIcon: {
-                            width: 32,
-                        height: 32,
-                        borderRadius: 16,
-                        backgroundColor: COLORS.border,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        marginBottom: 4,
-    },
-                        completedStepIcon: {
-                            backgroundColor: COLORS.primary,
-    },
-                        inactiveStepIcon: {
-                            backgroundColor: COLORS.border,
-    },
-                        activeStep: {
-                            opacity: 1,
-    },
-                        stepText: {
-                            fontSize: 12,
-                        color: COLORS.text,
-                        fontWeight: '600',
-    },
-                        stepLine: {
-                            height: 2,
-                        backgroundColor: COLORS.border,
-                        flex: 1,
-                        marginHorizontal: -10,
-                        marginBottom: 16,
-    },
-                        content: {
-                            padding: SPACING.md,
-    },
-                        card: {
-                            backgroundColor: COLORS.surface,
-                        borderRadius: RADIUS.md,
-                        padding: SPACING.lg,
-                        shadowColor: '#000',
-                        shadowOffset: {width: 0, height: 2 },
-                        shadowOpacity: 0.05,
-                        shadowRadius: 4,
-                        elevation: 2,
-    },
-                        cardHeader: {
-                            flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: SPACING.md,
-    },
-                        cardTitle: {
-                            fontSize: 18,
-                        fontWeight: 'bold',
-                        color: COLORS.text,
-    },
-                        statusBadge: {
-                            backgroundColor: '#FEF3C7',
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 12,
-    },
-                        statusText: {
-                            fontSize: 12,
-                        fontWeight: 'bold',
-                        color: '#D97706',
-    },
-                        instructionText: {
-                            fontSize: 14,
-                        color: COLORS.text,
-                        marginBottom: SPACING.lg,
-                        lineHeight: 20,
-    },
-                        amountContainer: {
-                            alignItems: 'center',
-                        marginBottom: SPACING.lg,
-                        padding: SPACING.md,
-                        backgroundColor: '#F8FAFC',
-                        borderRadius: RADIUS.md,
-    },
-                        amountLabel: {
-                            fontSize: 14,
-                        color: COLORS.textMuted,
-                        marginBottom: 4,
-    },
-                        amountValue: {
-                            fontSize: 24,
-                        fontWeight: 'bold',
-                        color: COLORS.text,
-    },
-                        sectionHeader: {
-                            fontSize: 16,
-                        fontWeight: '600',
-                        color: COLORS.text,
-                        marginBottom: SPACING.md,
-    },
-                        bankDetails: {
-                            marginBottom: SPACING.lg,
-    },
-                        detailRow: {
-                            flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-    },
-                        detailLabel: {
-                            color: COLORS.textMuted,
-                        fontSize: 14,
-    },
-                        detailValue: {
-                            color: COLORS.text,
-                        fontWeight: '500',
-                        fontSize: 14,
-    },
-                        primaryButton: {
-                            backgroundColor: COLORS.primary,
-                        padding: SPACING.md,
-                        borderRadius: RADIUS.md,
-                        alignItems: 'center',
-    },
-                        primaryButtonText: {
-                            color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: 16,
-    },
-                        waitingBox: {
-                            flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: SPACING.md,
-                        backgroundColor: '#F1F5F9',
-                        borderRadius: RADIUS.md,
-                        gap: 8,
-    },
-                        waitingText: {
-                            color: COLORS.textMuted,
-                        fontSize: 14,
-    },
-                        infoBox: {
-                            backgroundColor: '#F8FAFC',
-                        padding: SPACING.md,
-                        borderRadius: RADIUS.md,
-                        marginBottom: SPACING.lg,
-    },
-                        infoLabel: {
-                            fontSize: 12,
-                        color: COLORS.textMuted,
-                        marginBottom: 2,
-    },
-                        infoValue: {
-                            fontSize: 16,
-                        color: COLORS.text,
-                        fontWeight: '500',
-                        marginBottom: 12,
-    },
-                        successBox: {
-                            alignItems: 'center',
-                        marginBottom: SPACING.lg,
-    },
-                        successText: {
-                            fontSize: 18,
-                        fontWeight: 'bold',
-                        color: COLORS.primary,
-                        marginTop: 8,
-    },
-                        logisticsDetails: {
-                            marginBottom: SPACING.lg,
-    },
-                        addressText: {
-                            marginLeft: 28,
-                        color: COLORS.textMuted,
-                        lineHeight: 20,
-    },
-                        secondaryButton: {
-                            borderWidth: 1,
-                        borderColor: COLORS.border,
-                        padding: SPACING.md,
-                        borderRadius: RADIUS.md,
-                        alignItems: 'center',
-    },
-                        secondaryButtonText: {
-                            color: COLORS.text,
-                        fontWeight: '600',
-    },
-                        chatButton: {
-                            marginRight: SPACING.sm,
-    },
-                        infoSection: {
-                            marginBottom: SPACING.md,
-    },
-                        infoRow: {
-                            flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        marginBottom: 6,
-    },
+                <View style={styles.content}>
+                    {step === 'payment' && renderPaymentStep()}
+                    {step === 'receipt' && renderReceiptStep()}
+                    {step === 'logistics' && renderLogisticsStep()}
+                </View>
+            </ScrollView>
+            {renderChatBottomSheet()}
+        </SafeAreaView>
+    );
+}
 
-                        divider: {
-                            height: 1,
-                        backgroundColor: COLORS.border,
-                        marginVertical: SPACING.md,
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: COLORS.surface,
     },
-                        totalDivider: {
-                            height: 2,
-                        backgroundColor: COLORS.primary,
-                        marginVertical: SPACING.sm,
+    container: {
+        flex: 1,
+        backgroundColor: COLORS.background,
     },
-                        totalRow: {
-                            flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        marginBottom: SPACING.sm,
+    header: {
+        padding: SPACING.md,
+        backgroundColor: COLORS.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
-                        totalLabel: {
-                            fontSize: 18,
-                        fontWeight: 'bold',
-                        color: COLORS.text,
+    backButton: {
+        marginRight: SPACING.md,
     },
-                        totalValue: {
-                            fontSize: 24,
-                        fontWeight: 'bold',
-                        color: COLORS.primary,
+    backButtonText: {
+        color: COLORS.primary,
+        fontSize: 16,
     },
-                        urgencyBox: {
-                            flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 6,
-                        marginBottom: SPACING.sm,
-                        justifyContent: 'center',
-                        marginTop: SPACING.md,
+    headerContent: {
+        flex: 1,
     },
-                        urgencyText: {
-                            color: COLORS.error,
-                        fontWeight: '600',
-                        fontSize: 14,
+    title: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
     },
-                        warningText: {
-                            fontSize: 12,
-                        color: COLORS.textMuted,
-                        textAlign: 'center',
-                        fontStyle: 'italic',
-                        marginBottom: SPACING.md,
+    subtitle: {
+        fontSize: 14,
+        color: COLORS.textMuted,
     },
-                        // Bottom Sheet Styles
-                        modalOverlay: {
-                            flex: 1,
-                        justifyContent: 'flex-end',
+    devToggle: {
+        backgroundColor: '#eee',
+        padding: 4,
+        borderRadius: 4,
     },
-                        modalBackdrop: {
-                            flex: 1,
-                        backgroundColor: 'rgba(0,0,0,0.5)',
+    devToggleText: {
+        fontSize: 10,
+        fontWeight: 'bold',
     },
-                        bottomSheet: {
-                            backgroundColor: COLORS.surface,
-                        borderTopLeftRadius: RADIUS.lg,
-                        borderTopRightRadius: RADIUS.lg,
-                        height: '80%',
-                        shadowColor: '#000',
-                        shadowOffset: {width: 0, height: -2 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 10,
-                        elevation: 10,
+    stepperContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: SPACING.lg,
+        backgroundColor: COLORS.surface,
+        marginBottom: SPACING.md,
     },
-                        chatHeader: {
-                            flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: SPACING.md,
-                        borderBottomWidth: 1,
-                        borderBottomColor: COLORS.border,
+    stepItem: {
+        alignItems: 'center',
+        zIndex: 1,
     },
-                        chatTitle: {
-                            fontSize: 18,
-                        fontWeight: 'bold',
-                        color: COLORS.text,
+    stepIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: COLORS.border,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 4,
     },
-                        chatSubtitle: {
-                            fontSize: 14,
-                        color: COLORS.textMuted,
-                        marginTop: 2,
+    completedStepIcon: {
+        backgroundColor: COLORS.primary,
     },
-                        closeButton: {
-                            padding: SPACING.xs,
+    inactiveStepIcon: {
+        backgroundColor: COLORS.border,
     },
-                        chatMessages: {
-                            flex: 1,
-                        padding: SPACING.md,
+    activeStep: {
+        opacity: 1,
     },
-                        messageBubble: {
-                            backgroundColor: '#E0F2F1',
-                        padding: SPACING.sm,
-                        borderRadius: RADIUS.md,
-                        alignSelf: 'flex-start',
-                        maxWidth: '80%',
+    stepText: {
+        fontSize: 12,
+        color: COLORS.text,
+        fontWeight: '600',
     },
-                        messageText: {
-                            color: COLORS.text,
-                        lineHeight: 20,
+    stepLine: {
+        height: 2,
+        backgroundColor: COLORS.border,
+        flex: 1,
+        marginHorizontal: -10,
+        marginBottom: 16,
     },
-                        messageTime: {
-                            fontSize: 10,
-                        color: COLORS.textMuted,
-                        alignSelf: 'flex-end',
-                        marginTop: 4,
+    content: {
+        padding: SPACING.md,
     },
-                        chatInputContainer: {
-                            padding: SPACING.md,
-                        borderTopWidth: 1,
-                        borderTopColor: COLORS.border,
-                        backgroundColor: COLORS.background,
+    card: {
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.md,
+        padding: SPACING.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-                        inputButton: {
-                            borderWidth: 1,
-                        borderColor: COLORS.border,
-                        borderRadius: RADIUS.md,
-                        padding: SPACING.md,
-                        backgroundColor: COLORS.surface,
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: SPACING.md,
     },
-                        inputText: {
-                            color: COLORS.textMuted,
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+    },
+    statusBadge: {
+        backgroundColor: '#FEF3C7',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#D97706',
+    },
+    instructionText: {
+        fontSize: 14,
+        color: COLORS.text,
+        marginBottom: SPACING.lg,
+        lineHeight: 20,
+    },
+    amountContainer: {
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
+        padding: SPACING.md,
+        backgroundColor: '#F8FAFC',
+        borderRadius: RADIUS.md,
+    },
+    amountLabel: {
+        fontSize: 14,
+        color: COLORS.textMuted,
+        marginBottom: 4,
+    },
+    amountValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.text,
+    },
+    sectionHeader: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.text,
+        marginBottom: SPACING.md,
+    },
+    bankDetails: {
+        marginBottom: SPACING.lg,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    detailLabel: {
+        color: COLORS.textMuted,
+        fontSize: 14,
+    },
+    detailValue: {
+        color: COLORS.text,
+        fontWeight: '500',
+        fontSize: 14,
+    },
+    primaryButton: {
+        backgroundColor: COLORS.primary,
+        padding: SPACING.md,
+        borderRadius: RADIUS.md,
+        alignItems: 'center',
+    },
+    primaryButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    disabledButton: {
+        backgroundColor: COLORS.border,
+    },
+    waitingBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: SPACING.md,
+        backgroundColor: '#F1F5F9',
+        borderRadius: RADIUS.md,
+        gap: 8,
+    },
+    waitingText: {
+        color: COLORS.textMuted,
+        fontSize: 14,
+    },
+    infoBox: {
+        backgroundColor: '#F8FAFC',
+        padding: SPACING.md,
+        borderRadius: RADIUS.md,
+        marginBottom: SPACING.lg,
+    },
+    infoLabel: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+        marginBottom: 2,
+    },
+    infoValue: {
+        fontSize: 16,
+        color: COLORS.text,
+        fontWeight: '500',
+        marginBottom: 12,
+    },
+    successBox: {
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
+    },
+    successText: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginTop: 8,
+    },
+    logisticsDetails: {
+        marginBottom: SPACING.lg,
+    },
+    addressText: {
+        marginLeft: 28,
+        color: COLORS.textMuted,
+        lineHeight: 20,
+    },
+    secondaryButton: {
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        padding: SPACING.md,
+        borderRadius: RADIUS.md,
+        alignItems: 'center',
+    },
+    secondaryButtonText: {
+        color: COLORS.text,
+        fontWeight: '600',
+    },
+    chatButton: {
+        marginRight: SPACING.sm,
+    },
+    infoSection: {
+        marginBottom: SPACING.md,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 6,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.border,
+        marginVertical: SPACING.md,
+    },
+    totalDivider: {
+        height: 2,
+        backgroundColor: COLORS.primary,
+        marginVertical: SPACING.sm,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: SPACING.sm,
+    },
+    totalLabel: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+    },
+    totalValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+    },
+    urgencyBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: SPACING.sm,
+        justifyContent: 'center',
+        marginTop: SPACING.md,
+    },
+    urgencyText: {
+        color: COLORS.error,
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    warningText: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+        textAlign: 'center',
+        fontStyle: 'italic',
+        marginBottom: SPACING.md,
+    },
+    uploadSection: {
+        marginBottom: SPACING.lg,
+        marginTop: SPACING.md,
+    },
+    uploadButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.primary,
+        borderStyle: 'dashed',
+        borderRadius: RADIUS.md,
+        backgroundColor: '#F0F9FF',
+        gap: 8,
+    },
+    uploadButtonText: {
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+    filePreview: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: SPACING.md,
+        backgroundColor: '#F1F5F9',
+        borderRadius: RADIUS.md,
+        gap: 12,
+    },
+    fileName: {
+        flex: 1,
+        color: COLORS.text,
+        fontSize: 14,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    bottomSheet: {
+        backgroundColor: COLORS.surface,
+        borderTopLeftRadius: RADIUS.lg,
+        borderTopRightRadius: RADIUS.lg,
+        height: '80%',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    chatHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    chatTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.text,
+    },
+    chatSubtitle: {
+        fontSize: 14,
+        color: COLORS.textMuted,
+        marginTop: 2,
+    },
+    closeButton: {
+        padding: SPACING.xs,
+    },
+    chatMessages: {
+        flex: 1,
+        padding: SPACING.md,
+    },
+    messageBubble: {
+        backgroundColor: '#E0F2F1',
+        padding: SPACING.sm,
+        borderRadius: RADIUS.md,
+        alignSelf: 'flex-start',
+        maxWidth: '80%',
+    },
+    messageText: {
+        color: COLORS.text,
+        lineHeight: 20,
+    },
+    messageTime: {
+        fontSize: 10,
+        color: COLORS.textMuted,
+        alignSelf: 'flex-end',
+        marginTop: 4,
+    },
+    chatInputContainer: {
+        padding: SPACING.md,
+        borderTopWidth: 1,
+        borderTopColor: COLORS.border,
+        backgroundColor: COLORS.background,
+    },
+    inputButton: {
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: RADIUS.md,
+        padding: SPACING.md,
+        backgroundColor: COLORS.surface,
+    },
+    inputText: {
+        color: COLORS.textMuted,
     },
 });
