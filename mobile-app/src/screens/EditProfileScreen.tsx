@@ -308,56 +308,66 @@ export default function EditProfileScreen({ navigation }: any) {
                         />
                     </View>
 
-                    <View style={styles.row}>
-                        <View style={[styles.inputGroup, { flex: 1, marginRight: SPACING.sm }]}>
-                            <Text style={styles.label}>Governorate (Mohafazah) *</Text>
-                            <View style={styles.pickerContainer}>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerScroll}>
-                                    {governorates.map((gov) => (
-                                        <TouchableOpacity
-                                            key={gov.name}
-                                            style={[
-                                                styles.pickerOption,
-                                                formData.governorate === gov.name && styles.pickerOptionActive
-                                            ]}
-                                            onPress={() => setFormData({ ...formData, governorate: gov.name, caza: '' })}
-                                        >
-                                            <Text style={[
-                                                styles.pickerOptionText,
-                                                formData.governorate === gov.name && styles.pickerOptionTextActive
-                                            ]}>
-                                                {gov.name}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Governorate (Mohafazah) *</Text>
+                        <View style={styles.dropdownList}>
+                            {governorates.map((gov) => (
+                                <TouchableOpacity
+                                    key={gov.name}
+                                    style={[
+                                        styles.dropdownItem,
+                                        formData.governorate === gov.name && styles.dropdownItemActive
+                                    ]}
+                                    onPress={() => setFormData({ ...formData, governorate: gov.name, caza: '' })}
+                                >
+                                    <View style={[
+                                        styles.radioButton,
+                                        formData.governorate === gov.name && styles.radioButtonActive
+                                    ]}>
+                                        {formData.governorate === gov.name && (
+                                            <View style={styles.radioDot} />
+                                        )}
+                                    </View>
+                                    <Text style={[
+                                        styles.dropdownText,
+                                        formData.governorate === gov.name && styles.dropdownTextActive
+                                    ]}>
+                                        {gov.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))}
                         </View>
                     </View>
 
                     {selectedGovernorate && (
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Caza (District) *</Text>
-                            <View style={styles.pickerContainer}>
-                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerScroll}>
-                                    {selectedGovernorate.cazas.map((caza) => (
-                                        <TouchableOpacity
-                                            key={caza}
-                                            style={[
-                                                styles.pickerOption,
-                                                formData.caza === caza && styles.pickerOptionActive
-                                            ]}
-                                            onPress={() => setFormData({ ...formData, caza })}
-                                        >
-                                            <Text style={[
-                                                styles.pickerOptionText,
-                                                formData.caza === caza && styles.pickerOptionTextActive
-                                            ]}>
-                                                {caza}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
+                            <View style={styles.dropdownList}>
+                                {selectedGovernorate.cazas.map((caza) => (
+                                    <TouchableOpacity
+                                        key={caza}
+                                        style={[
+                                            styles.dropdownItem,
+                                            formData.caza === caza && styles.dropdownItemActive
+                                        ]}
+                                        onPress={() => setFormData({ ...formData, caza })}
+                                    >
+                                        <View style={[
+                                            styles.radioButton,
+                                            formData.caza === caza && styles.radioButtonActive
+                                        ]}>
+                                            {formData.caza === caza && (
+                                                <View style={styles.radioDot} />
+                                            )}
+                                        </View>
+                                        <Text style={[
+                                            styles.dropdownText,
+                                            formData.caza === caza && styles.dropdownTextActive
+                                        ]}>
+                                            {caza}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
                         </View>
                     )}
@@ -544,5 +554,51 @@ const styles = StyleSheet.create({
     },
     pickerOptionTextActive: {
         color: 'white',
+    },
+    dropdownList: {
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: RADIUS.md,
+        backgroundColor: COLORS.surface,
+        overflow: 'hidden',
+        maxHeight: 250,
+    },
+    dropdownItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    dropdownItemActive: {
+        backgroundColor: COLORS.primaryLight,
+    },
+    radioButton: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: COLORS.border,
+        marginRight: SPACING.sm,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    radioButtonActive: {
+        borderColor: COLORS.primary,
+    },
+    radioDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: COLORS.primary,
+    },
+    dropdownText: {
+        fontSize: 16,
+        color: COLORS.text,
+        fontWeight: '500',
+    },
+    dropdownTextActive: {
+        color: COLORS.primary,
+        fontWeight: '600',
     },
 });
