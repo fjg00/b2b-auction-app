@@ -329,6 +329,14 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Buyer</Text>
                 <Text style={styles.infoValue}>{transaction.buyer}</Text>
+                {role === 'buyer' && (
+                    <>
+                        <Text style={styles.infoLabel}>Seller</Text>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller)}>
+                            <Text style={styles.linkValue}>{transaction.seller}</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
                 <Text style={styles.infoLabel}>Amount</Text>
                 <Text style={styles.infoValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
             </View>
@@ -363,6 +371,15 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             <Text style={styles.instructionText}>
                 The transaction is now ready for handover. Please coordinate the pickup/delivery.
             </Text>
+
+            {role === 'buyer' && (
+                <View style={styles.infoBox}>
+                    <Text style={styles.infoLabel}>Seller Contact</Text>
+                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller)}>
+                        <Text style={styles.linkValue}>{transaction.seller}</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
             <View style={styles.logisticsDetails}>
                 <View style={styles.logisticsRow}>
