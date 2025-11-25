@@ -136,7 +136,7 @@ export default function AddressesScreen({ navigation }: any) {
         <SafeAreaView style={styles.container} edges={['bottom']}>
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Addresses</Text>
+                    <Text style={styles.headerTitle}>Warehouse Addresses</Text>
                     <Text style={styles.headerSubtitle}>
                         Manage your pickup and delivery locations
                     </Text>
@@ -269,6 +269,8 @@ function AddressForm({ address, onClose, onSave }: { address: AddressType | null
         caza: address?.zip_code || '',
         country: address?.country || 'Lebanon',
         phone: address?.phone || '',
+        siteContactName: address?.site_contact_name || '',
+        pickupWindows: address?.pickup_windows || '',
         notes: address?.notes || '',
         type: address?.type || 'both',
         isDefault: address?.is_default || false,
@@ -315,6 +317,8 @@ function AddressForm({ address, onClose, onSave }: { address: AddressType | null
                 zip_code: formData.caza,
                 country: formData.country,
                 phone: formData.phone,
+                site_contact_name: formData.siteContactName,
+                pickup_windows: formData.pickupWindows,
                 notes: formData.notes,
                 type: formData.type,
                 is_default: formData.isDefault,
@@ -440,6 +444,28 @@ function AddressForm({ address, onClose, onSave }: { address: AddressType | null
                         placeholder="+961 71 123 456"
                         placeholderTextColor={COLORS.textMuted}
                         keyboardType="phone-pad"
+                    />
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Site Contact Name</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={formData.siteContactName}
+                        onChangeText={(text) => setFormData({ ...formData, siteContactName: text })}
+                        placeholder="e.g., John Doe, Warehouse Manager"
+                        placeholderTextColor={COLORS.textMuted}
+                    />
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Pickup Windows</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={formData.pickupWindows}
+                        onChangeText={(text) => setFormData({ ...formData, pickupWindows: text })}
+                        placeholder="e.g., Mon-Fri, 9AM-5PM"
+                        placeholderTextColor={COLORS.textMuted}
                     />
                 </View>
 

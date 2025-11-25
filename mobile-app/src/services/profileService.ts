@@ -60,6 +60,8 @@ export interface Address {
     notes?: string;
     is_default: boolean;
     type: 'pickup' | 'delivery' | 'both';
+    site_contact_name?: string;
+    pickup_windows?: string;
     created_at?: string;
     updated_at?: string;
 }
