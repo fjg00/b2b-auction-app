@@ -160,6 +160,12 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 Please transfer the total amount to the seller's bank account below.
             </Text>
 
+            {/* Payment Deadline */}
+            <View style={styles.deadlineBox}>
+                <Clock size={18} color={COLORS.error} />
+                <Text style={styles.deadlineText}>Payment Due: {transaction.dueDate}</Text>
+            </View>
+
             {/* Price Breakdown */}
             <Text style={styles.sectionHeader}>Price Breakdown ({transaction.currency})</Text>
             <View style={styles.detailRow}>
@@ -241,6 +247,10 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
 
             <Text style={styles.instructionText}>
                 The buyer has marked this transaction as paid. Please check your bank account.
+            </Text>
+
+            <Text style={styles.warningText}>
+                Note: Bank transfers may take 1-3 business days to appear in your account.
             </Text>
 
             <View style={styles.infoBox}>
@@ -520,23 +530,6 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.lg,
         lineHeight: 20,
     },
-    amountContainer: {
-        alignItems: 'center',
-        marginBottom: SPACING.lg,
-        padding: SPACING.md,
-        backgroundColor: '#F8FAFC',
-        borderRadius: RADIUS.md,
-    },
-    amountLabel: {
-        fontSize: 14,
-        color: COLORS.textMuted,
-        marginBottom: 4,
-    },
-    amountValue: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: COLORS.text,
-    },
     sectionHeader: {
         fontSize: 16,
         fontWeight: '600',
@@ -623,22 +616,6 @@ const styles = StyleSheet.create({
         gap: 12,
         marginBottom: 16,
     },
-    addressText: {
-        marginLeft: 28,
-        color: COLORS.textMuted,
-        lineHeight: 20,
-    },
-    secondaryButton: {
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        padding: SPACING.md,
-        borderRadius: RADIUS.md,
-        alignItems: 'center',
-    },
-    secondaryButtonText: {
-        color: COLORS.text,
-        fontWeight: '600',
-    },
     chatButton: {
         marginRight: SPACING.sm,
     },
@@ -675,25 +652,28 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: COLORS.primary,
     },
-    urgencyBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-        marginBottom: SPACING.sm,
-        justifyContent: 'center',
-        marginTop: SPACING.md,
-    },
-    urgencyText: {
-        color: COLORS.error,
-        fontWeight: '600',
-        fontSize: 14,
-    },
     warningText: {
         fontSize: 12,
         color: COLORS.textMuted,
         textAlign: 'center',
         fontStyle: 'italic',
         marginBottom: SPACING.md,
+    },
+    deadlineBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        padding: SPACING.sm,
+        backgroundColor: '#FEF2F2',
+        borderRadius: RADIUS.sm,
+        borderWidth: 1,
+        borderColor: '#FCA5A5',
+        marginBottom: SPACING.lg,
+    },
+    deadlineText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.error,
     },
     uploadSection: {
         marginBottom: SPACING.lg,
