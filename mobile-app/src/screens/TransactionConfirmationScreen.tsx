@@ -259,6 +259,14 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         <Text style={styles.deadlineText}>Buyer must pay by: {transaction.dueDate}</Text>
                     </View>
 
+                    {/* Buyer Contact Info */}
+                    <View style={styles.infoBox}>
+                        <Text style={styles.infoLabel}>Buyer Contact</Text>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer)}>
+                            <Text style={styles.linkValue}>{transaction.buyer}</Text>
+                        </TouchableOpacity>
+                    </View>
+
                     {/* Payout Breakdown */}
                     <Text style={styles.sectionHeader}>Payout Breakdown ({transaction.currency})</Text>
                     <View style={styles.detailRow}>
@@ -328,7 +336,13 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
 
             <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Buyer</Text>
-                <Text style={styles.infoValue}>{transaction.buyer}</Text>
+                {role === 'seller' ? (
+                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer)}>
+                        <Text style={styles.linkValue}>{transaction.buyer}</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <Text style={styles.infoValue}>{transaction.buyer}</Text>
+                )}
                 {role === 'buyer' && (
                     <>
                         <Text style={styles.infoLabel}>Seller</Text>
@@ -377,6 +391,15 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <Text style={styles.infoLabel}>Seller Contact</Text>
                     <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller)}>
                         <Text style={styles.linkValue}>{transaction.seller}</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {role === 'seller' && (
+                <View style={styles.infoBox}>
+                    <Text style={styles.infoLabel}>Buyer Contact</Text>
+                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer)}>
+                        <Text style={styles.linkValue}>{transaction.buyer}</Text>
                     </TouchableOpacity>
                 </View>
             )}
