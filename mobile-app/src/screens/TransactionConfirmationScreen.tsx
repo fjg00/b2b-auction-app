@@ -156,83 +156,122 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
 
             <View style={styles.divider} />
 
-            <Text style={styles.instructionText}>
-                Please transfer the total amount to the seller's bank account below.
-            </Text>
+            {role === 'buyer' ? (
+                <>
+                    <Text style={styles.instructionText}>
+                        Please transfer the total amount to the seller's bank account below.
+                    </Text>
 
-            {/* Payment Deadline */}
-            <View style={styles.deadlineBox}>
-                <Clock size={18} color={COLORS.error} />
-                <Text style={styles.deadlineText}>Payment Due: {transaction.dueDate}</Text>
-            </View>
-
-            {/* Price Breakdown */}
-            <Text style={styles.sectionHeader}>Price Breakdown ({transaction.currency})</Text>
-            <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Winning Bid</Text>
-                <Text style={styles.detailValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
-            </View>
-            <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Buyer Premium (5%)</Text>
-                <Text style={styles.detailValue}>{transaction.currency} ${transaction.buyerPremium.toLocaleString()}</Text>
-            </View>
-            <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>VAT (11%)</Text>
-                <Text style={styles.detailValue}>{transaction.currency} ${transaction.vat.toLocaleString()}</Text>
-            </View>
-
-            <View style={styles.totalDivider} />
-
-            <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>Total Due</Text>
-                <Text style={styles.totalValue}>{transaction.currency} ${transaction.totalDue.toLocaleString()}</Text>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.bankDetails}>
-                <Text style={styles.sectionHeader}>Bank Details</Text>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Bank Name</Text>
-                    <Text style={styles.detailValue}>Global Bank Corp</Text>
-                </View>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Account Name</Text>
-                    <Text style={styles.detailValue}>{transaction.seller}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>IBAN</Text>
-                    <Text style={styles.detailValue}>US12 3456 7890 1234 5678</Text>
-                </View>
-            </View>
-
-            {/* Proof of Payment Upload */}
-            <View style={styles.uploadSection}>
-                <Text style={styles.sectionHeader}>Proof of Payment</Text>
-
-                {proofOfPayment ? (
-                    <View style={styles.filePreview}>
-                        <FileText size={24} color={COLORS.primary} />
-                        <Text style={styles.fileName}>{proofOfPayment}</Text>
-                        <TouchableOpacity onPress={() => setProofOfPayment(null)}>
-                            <X size={20} color={COLORS.textMuted} />
-                        </TouchableOpacity>
+                    {/* Payment Deadline */}
+                    <View style={styles.deadlineBox}>
+                        <Clock size={18} color={COLORS.error} />
+                        <Text style={styles.deadlineText}>Payment Due: {transaction.dueDate}</Text>
                     </View>
-                ) : (
-                    <TouchableOpacity style={styles.uploadButton} onPress={handleUploadProof}>
-                        <Upload size={20} color={COLORS.primary} />
-                        <Text style={styles.uploadButtonText}>Upload Receipt (PDF or Image)</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
 
-            <TouchableOpacity
-                style={[styles.primaryButton, !proofOfPayment && styles.disabledButton]}
-                onPress={handleConfirmPayment}
-                disabled={!proofOfPayment}
-            >
-                <Text style={styles.primaryButtonText}>I Have Sent the Payment</Text>
-            </TouchableOpacity>
+                    {/* Price Breakdown */}
+                    <Text style={styles.sectionHeader}>Price Breakdown ({transaction.currency})</Text>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Winning Bid</Text>
+                        <Text style={styles.detailValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>Buyer Premium (5%)</Text>
+                        <Text style={styles.detailValue}>{transaction.currency} ${transaction.buyerPremium.toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                        <Text style={styles.detailLabel}>VAT (11%)</Text>
+                        <Text style={styles.detailValue}>{transaction.currency} ${transaction.vat.toLocaleString()}</Text>
+                    </View>
+
+                    <View style={styles.totalDivider} />
+
+                    <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Total Due</Text>
+                        <Text style={styles.totalValue}>{transaction.currency} ${transaction.totalDue.toLocaleString()}</Text>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.bankDetails}>
+                        <Text style={styles.sectionHeader}>Bank Details</Text>
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Bank Name</Text>
+                            <Text style={styles.detailValue}>Global Bank Corp</Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Account Name</Text>
+                            <Text style={styles.detailValue}>{transaction.seller}</Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>IBAN</Text>
+                            <Text style={styles.detailValue}>US12 3456 7890 1234 5678</Text>
+                        </View>
+                    </View>
+
+                    {/* Proof of Payment Upload */}
+                    <View style={styles.uploadSection}>
+                        <Text style={styles.sectionHeader}>Proof of Payment</Text>
+
+                        {proofOfPayment ? (
+                            <View style={styles.filePreview}>
+                                <FileText size={24} color={COLORS.primary} />
+                                <Text style={styles.fileName}>{proofOfPayment}</Text>
+                                <TouchableOpacity onPress={() => setProofOfPayment(null)}>
+                                    <X size={20} color={COLORS.textMuted} />
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadProof}>
+                                <Upload size={20} color={COLORS.primary} />
+                                <Text style={styles.uploadButtonText}>Upload Receipt (PDF or Image)</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    <TouchableOpacity
+                        style={[styles.primaryButton, !proofOfPayment && styles.disabledButton]}
+                        onPress={handleConfirmPayment}
+                        disabled={!proofOfPayment}
+                    >
+                        <Text style={styles.primaryButtonText}>I Have Sent the Payment</Text>
+                    </TouchableOpacity>
+                </>
+            ) : (
+                <>
+                    {/* Seller View - Net Payout */}
+                    <View style={styles.payoutBox}>
+                        <Text style={styles.payoutLabel}>Net Payout to You</Text>
+                        <Text style={styles.payoutValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+                        <Text style={styles.payoutSubtext}>After buyer payment is confirmed</Text>
+                    </View>
+
+                    <Text style={styles.instructionText}>
+                        The buyer has been notified to send payment. You will be able to confirm receipt once the funds arrive in your account.
+                    </Text>
+
+                    <View style={styles.waitingBox}>
+                        <Clock size={20} color={COLORS.textMuted} />
+                        <Text style={styles.waitingText}>Waiting for buyer to send payment...</Text>
+                    </View>
+
+                    {/* Seller's Bank Details Reference */}
+                    <View style={styles.bankDetails}>
+                        <Text style={styles.sectionHeader}>Your Bank Details (Reference)</Text>
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Bank Name</Text>
+                            <Text style={styles.detailValue}>Global Bank Corp</Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>Account Name</Text>
+                            <Text style={styles.detailValue}>{transaction.seller}</Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                            <Text style={styles.detailLabel}>IBAN</Text>
+                            <Text style={styles.detailValue}>US12 3456 7890 1234 5678</Text>
+                        </View>
+                    </View>
+                </>
+            )}
         </View>
     );
 
@@ -575,6 +614,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F1F5F9',
         borderRadius: RADIUS.md,
         gap: 8,
+        marginBottom: SPACING.lg,
     },
     waitingText: {
         color: COLORS.textMuted,
@@ -674,6 +714,31 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: COLORS.error,
+    },
+    payoutBox: {
+        alignItems: 'center',
+        padding: SPACING.lg,
+        backgroundColor: '#F0F9FF',
+        borderRadius: RADIUS.md,
+        borderWidth: 2,
+        borderColor: COLORS.primary,
+        marginBottom: SPACING.lg,
+    },
+    payoutLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.primary,
+        marginBottom: 8,
+    },
+    payoutValue: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: COLORS.text,
+        marginBottom: 4,
+    },
+    payoutSubtext: {
+        fontSize: 12,
+        color: COLORS.textMuted,
     },
     uploadSection: {
         marginBottom: SPACING.lg,
