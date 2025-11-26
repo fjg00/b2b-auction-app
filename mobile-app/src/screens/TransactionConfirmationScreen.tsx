@@ -238,7 +238,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 {role === 'buyer' && (
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Seller:</Text>
-                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller?.name)}>
+                        <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.sellerId })}>
                             <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
                         </TouchableOpacity>
                     </View>
@@ -343,7 +343,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     {/* Buyer Contact Info */}
                     <View style={styles.infoBox}>
                         <Text style={styles.infoLabel}>Buyer Contact</Text>
-                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer?.name)}>
+                        <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.buyerId })}>
                             <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
                         </TouchableOpacity>
                     </View>
@@ -429,7 +429,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Buyer</Text>
                 {role === 'seller' ? (
-                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer?.name)}>
+                    <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.buyerId })}>
                         <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
                     </TouchableOpacity>
                 ) : (
@@ -438,7 +438,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 {role === 'buyer' && (
                     <>
                         <Text style={styles.infoLabel}>Seller</Text>
-                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller?.name)}>
+                        <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.sellerId })}>
                             <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
                         </TouchableOpacity>
                     </>
