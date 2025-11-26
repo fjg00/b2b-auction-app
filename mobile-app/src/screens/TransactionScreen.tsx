@@ -332,7 +332,10 @@ export default function TransactionScreen({ route, navigation }: any) {
     if (role === 'seller') {
         return (
             <>
-                <ScrollView style={styles.container}>
+                <ScrollView
+                    style={styles.container}
+                    keyboardDismissMode="on-drag"
+                >
                     <SellerTransactionHeader
                         {...sellerTransaction}
                         onBack={() => navigation.goBack()}
@@ -381,7 +384,10 @@ export default function TransactionScreen({ route, navigation }: any) {
     // RENDER BUYER VIEW (Existing)
     return (
         <>
-            <ScrollView style={styles.container}>
+            <ScrollView
+                style={styles.container}
+                keyboardDismissMode="on-drag"
+            >
                 <View style={styles.header}>
                     <View style={styles.headerLeft}>
                         <Text style={styles.title}>Transaction #{transaction.id}</Text>

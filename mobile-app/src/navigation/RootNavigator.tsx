@@ -1,7 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import LoginScreen from '../screens/LoginScreen';
 import HomeScreen from '../screens/HomeScreen';
 import ItemDetailsScreen from '../screens/ItemDetailsScreen';
@@ -72,9 +72,28 @@ import VerificationScreen from '../screens/VerificationScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
 import AddressesScreen from '../screens/AddressesScreen';
 import TransactionConfirmationScreen from '../screens/TransactionConfirmationScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import { supabase } from '../lib/supabase';
+import { useEffect } from 'react';
 
 export default function RootNavigator() {
     const { session, loading } = useAuth();
+    const navigationRef = useNavigationContainerRef();
+
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                // Navigate to ResetPassword screen
+                if (navigationRef.isReady()) {
+                    // @ts-ignore
+                    navigationRef.navigate('ResetPassword');
+                }
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [navigationRef]);
 
     if (loading) {
         return (
@@ -85,13 +104,14 @@ export default function RootNavigator() {
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef}>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {!session ? (
                     // Auth Stack
                     <>
                         <Stack.Screen name="Login" component={LoginScreen} />
                         <Stack.Screen name="SignUp" component={SignUpScreen} />
+                        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
                     </>
                 ) : (
                     // App Stack
@@ -174,6 +194,13 @@ export default function RootNavigator() {
                             component={TransactionConfirmationScreen}
                             options={{
                                 headerShown: false, // Custom header in screen
+                            }}
+                        />
+                        <Stack.Screen
+                            name="ResetPassword"
+                            component={ResetPasswordScreen}
+                            options={{
+                                headerShown: false,
                             }}
                         />
                     </>

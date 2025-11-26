@@ -96,7 +96,11 @@ export default function CreateLotScreen({ navigation }: any) {
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-            <ScrollView style={styles.container}>
+            <ScrollView
+                style={styles.container}
+                keyboardDismissMode="on-drag"
+                keyboardShouldPersistTaps="handled"
+            >
                 <View style={styles.header}>
                     <Text style={styles.title}>Create New Lot</Text>
                     <Text style={styles.subtitle}>List your excess inventory for auction.</Text>

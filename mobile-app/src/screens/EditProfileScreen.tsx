@@ -165,7 +165,11 @@ export default function EditProfileScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                keyboardDismissMode="on-drag"
+            >
                 {/* Profile Photo Section */}
                 <View style={styles.photoSection}>
                     <View style={styles.photoContainer}>

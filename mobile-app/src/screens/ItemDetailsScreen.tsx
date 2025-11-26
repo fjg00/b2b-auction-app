@@ -15,6 +15,20 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
     const [submitting, setSubmitting] = useState(false);
 
     const [timeLeft, setTimeLeft] = useState('');
+    const [existingTransactionId, setExistingTransactionId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const checkTransaction = async () => {
+            if (user && lot) {
+                const { getTransactionByLotId } = require('../services/auctionService');
+                const tx = await getTransactionByLotId(lot.id, user.id);
+                if (tx) {
+                    setExistingTransactionId(tx.id);
+                }
+            }
+        };
+        checkTransaction();
+    }, [user, lot]);
 
     useEffect(() => {
         loadDetails();
@@ -128,20 +142,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
 
     // Check if current user is the seller
     const isOwner = user && lot.seller_id === user.id;
-    const [existingTransactionId, setExistingTransactionId] = useState<string | null>(null);
 
-    useEffect(() => {
-        const checkTransaction = async () => {
-            if (user && lot) {
-                const { getTransactionByLotId } = require('../services/auctionService');
-                const tx = await getTransactionByLotId(lot.id, user.id);
-                if (tx) {
-                    setExistingTransactionId(tx.id);
-                }
-            }
-        };
-        checkTransaction();
-    }, [user, lot]);
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>

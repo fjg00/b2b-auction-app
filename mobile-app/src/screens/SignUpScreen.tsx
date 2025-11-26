@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { supabase } from '../lib/supabase';
+import KeyboardDismissWrapper from '../components/KeyboardDismissWrapper';
 
 export default function SignUpScreen({ navigation }: any) {
     const [fullName, setFullName] = useState('');
@@ -68,72 +69,74 @@ export default function SignUpScreen({ navigation }: any) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.brand}>ExpiryX</Text>
-                    <Text style={styles.title}>Create Account</Text>
-                    <Text style={styles.subtitle}>Join the B2B Marketplace</Text>
-                </View>
-
-                <View style={styles.form}>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Full Name</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="John Doe"
-                            placeholderTextColor={COLORS.textMuted}
-                            value={fullName}
-                            onChangeText={setFullName}
-                        />
+        <KeyboardDismissWrapper>
+            <SafeAreaView style={styles.container}>
+                <ScrollView contentContainerStyle={styles.content}>
+                    <View style={styles.header}>
+                        <Text style={styles.brand}>ExpiryX</Text>
+                        <Text style={styles.title}>Create Account</Text>
+                        <Text style={styles.subtitle}>Join the B2B Marketplace</Text>
                     </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter your email"
-                            placeholderTextColor={COLORS.textMuted}
-                            value={email}
-                            onChangeText={setEmail}
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                        />
+                    <View style={styles.form}>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Full Name</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="John Doe"
+                                placeholderTextColor={COLORS.textMuted}
+                                value={fullName}
+                                onChangeText={setFullName}
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Email</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Enter your email"
+                                placeholderTextColor={COLORS.textMuted}
+                                value={email}
+                                onChangeText={setEmail}
+                                autoCapitalize="none"
+                                keyboardType="email-address"
+                            />
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Password</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Create a password"
+                                placeholderTextColor={COLORS.textMuted}
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={[styles.button, loading && styles.buttonDisabled]}
+                            onPress={handleSignUp}
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <ActivityIndicator color="white" />
+                            ) : (
+                                <Text style={styles.buttonText}>Sign Up</Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={styles.linkButton}
+                            onPress={() => navigation.navigate('Login')}
+                        >
+                            <Text style={styles.linkText}>Already have an account? Log In</Text>
+                        </TouchableOpacity>
                     </View>
-
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Password</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Create a password"
-                            placeholderTextColor={COLORS.textMuted}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                        />
-                    </View>
-
-                    <TouchableOpacity
-                        style={[styles.button, loading && styles.buttonDisabled]}
-                        onPress={handleSignUp}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text style={styles.buttonText}>Sign Up</Text>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.linkButton}
-                        onPress={() => navigation.navigate('Login')}
-                    >
-                        <Text style={styles.linkText}>Already have an account? Log In</Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
-        </SafeAreaView>
+                </ScrollView>
+            </SafeAreaView>
+        </KeyboardDismissWrapper>
     );
 }
 

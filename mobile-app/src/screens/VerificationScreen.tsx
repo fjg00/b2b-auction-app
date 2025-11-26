@@ -227,7 +227,11 @@ export default function VerificationScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                keyboardDismissMode="on-drag"
+            >
                 {/* Account Type Selection */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Are you selling as:</Text>

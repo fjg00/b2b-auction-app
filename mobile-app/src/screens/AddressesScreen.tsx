@@ -134,7 +134,11 @@ export default function AddressesScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={styles.container} edges={['bottom']}>
-            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                keyboardDismissMode="on-drag"
+            >
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Warehouse Addresses</Text>
                     <Text style={styles.headerSubtitle}>
@@ -815,97 +819,12 @@ const styles = StyleSheet.create({
         opacity: 0.6,
     },
     cancelFormButton: {
-        backgroundColor: COLORS.surface,
         padding: SPACING.md,
-        borderRadius: RADIUS.md,
         alignItems: 'center',
-        borderWidth: 1,
-        borderColor: COLORS.border,
     },
     cancelFormButtonText: {
-        color: COLORS.text,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    loadingText: {
-        marginTop: SPACING.md,
-        fontSize: 16,
         color: COLORS.textMuted,
-    },
-    pickerContainer: {
-        marginTop: SPACING.xs,
-    },
-    pickerScroll: {
-        flexDirection: 'row',
-    },
-    pickerOption: {
-        paddingVertical: SPACING.sm,
-        paddingHorizontal: SPACING.md,
-        borderRadius: RADIUS.md,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        backgroundColor: COLORS.surface,
-        marginRight: SPACING.xs,
-    },
-    pickerOptionActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-    },
-    pickerOptionText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: COLORS.text,
-    },
-    dropdownList: {
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        borderRadius: RADIUS.md,
-        backgroundColor: COLORS.surface,
-        overflow: 'hidden',
-        maxHeight: 250,
-    },
-    dropdownItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: SPACING.md,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
-    },
-    dropdownItemActive: {
-        backgroundColor: COLORS.primaryLight,
-    },
-    radioButton: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        borderWidth: 2,
-        borderColor: COLORS.border,
-        marginRight: SPACING.sm,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    radioButtonActive: {
-        borderColor: COLORS.primary,
-    },
-    radioDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: COLORS.primary,
-    },
-    dropdownText: {
         fontSize: 16,
-        color: COLORS.text,
-        fontWeight: '500',
-    },
-    dropdownTextActive: {
-        color: COLORS.primary,
         fontWeight: '600',
     },
-
 });

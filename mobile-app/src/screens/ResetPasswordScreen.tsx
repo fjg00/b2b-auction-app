@@ -3,30 +3,51 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { supabase } from '../lib/supabase';
+
 import KeyboardDismissWrapper from '../components/KeyboardDismissWrapper';
 
-export default function LoginScreen({ navigation }: any) {
-    const [email, setEmail] = useState('');
+export default function ResetPasswordScreen({ navigation }: any) {
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Error', 'Please enter email and password');
+    const handleUpdatePassword = async () => {
+        if (!password || !confirmPassword) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            Alert.alert('Error', 'Passwords do not match');
+            return;
+        }
+
+        if (password.length < 6) {
+            Alert.alert('Error', 'Password must be at least 6 characters');
             return;
         }
 
         setLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+            const { error } = await supabase.auth.updateUser({
+                password: password
             });
 
             if (error) {
-                Alert.alert('Login Failed', error.message);
+                Alert.alert('Error', error.message);
             } else {
-                // Navigation is handled by RootNavigator listening to auth state
+                Alert.alert(
+                    'Success',
+                    'Your password has been updated successfully.',
+                    [{
+                        text: 'OK',
+                        onPress: () => {
+                            // Navigate to home or profile, or just go back
+                            // Since we are logged in, we are likely in the App Stack
+                            navigation.navigate('Main');
+                        }
+                    }]
+                );
             }
         } catch (error) {
             Alert.alert('Error', 'An unexpected error occurred');
@@ -39,62 +60,50 @@ export default function LoginScreen({ navigation }: any) {
     return (
         <KeyboardDismissWrapper>
             <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>Set New Password</Text>
+                </View>
+
                 <View style={styles.content}>
-                    <View style={styles.header}>
-                        <Text style={styles.brand}>ExpiryX</Text>
-                        <Text style={styles.title}>Marketplace</Text>
-                        <Text style={styles.subtitle}>B2B Auction Platform</Text>
-                    </View>
+                    <Text style={styles.description}>
+                        Please enter your new password below.
+                    </Text>
 
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Email</Text>
+                            <Text style={styles.label}>New Password</Text>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Enter your email"
-                                placeholderTextColor={COLORS.textMuted}
-                                value={email}
-                                onChangeText={setEmail}
-                                autoCapitalize="none"
-                                keyboardType="email-address"
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Password</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter your password"
+                                placeholder="Enter new password"
                                 placeholderTextColor={COLORS.textMuted}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry
                             />
-                            <TouchableOpacity
-                                style={styles.forgotPasswordButton}
-                                onPress={() => navigation.navigate('ForgotPassword')}
-                            >
-                                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Confirm Password</Text>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Confirm new password"
+                                placeholderTextColor={COLORS.textMuted}
+                                value={confirmPassword}
+                                onChangeText={setConfirmPassword}
+                                secureTextEntry
+                            />
                         </View>
 
                         <TouchableOpacity
                             style={[styles.button, loading && styles.buttonDisabled]}
-                            onPress={handleLogin}
+                            onPress={handleUpdatePassword}
                             disabled={loading}
                         >
                             {loading ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text style={styles.buttonText}>Log In</Text>
+                                <Text style={styles.buttonText}>Update Password</Text>
                             )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.linkButton}
-                            onPress={() => navigation.navigate('SignUp')}
-                        >
-                            <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -108,29 +117,27 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
     },
-    content: {
-        flex: 1,
-        justifyContent: 'center',
-        padding: SPACING.lg,
-    },
     header: {
+        padding: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        backgroundColor: COLORS.surface,
         alignItems: 'center',
-        marginBottom: SPACING.xl,
     },
-    brand: {
-        fontSize: 32,
+    headerTitle: {
+        fontSize: 20,
         fontWeight: 'bold',
-        color: COLORS.primary,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: '600',
         color: COLORS.text,
     },
-    subtitle: {
+    content: {
+        flex: 1,
+        padding: SPACING.lg,
+    },
+    description: {
         fontSize: 16,
         color: COLORS.textMuted,
-        marginTop: SPACING.xs,
+        marginBottom: SPACING.xl,
+        textAlign: 'center',
     },
     form: {
         backgroundColor: COLORS.surface,
@@ -173,22 +180,5 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
-    },
-    linkButton: {
-        marginTop: SPACING.md,
-        alignItems: 'center',
-    },
-    linkText: {
-        color: COLORS.primary,
-        fontSize: 14,
-    },
-    forgotPasswordButton: {
-        alignSelf: 'flex-end',
-        marginBottom: SPACING.md,
-    },
-    forgotPasswordText: {
-        color: COLORS.primary,
-        fontSize: 14,
-        fontWeight: '500',
     },
 });

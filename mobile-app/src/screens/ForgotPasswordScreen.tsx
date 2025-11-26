@@ -3,30 +3,35 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { supabase } from '../lib/supabase';
+import { ArrowLeft } from 'lucide-react-native';
+import * as Linking from 'expo-linking';
 import KeyboardDismissWrapper from '../components/KeyboardDismissWrapper';
 
-export default function LoginScreen({ navigation }: any) {
+export default function ForgotPasswordScreen({ navigation }: any) {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Error', 'Please enter email and password');
+    const handleResetPassword = async () => {
+        if (!email) {
+            Alert.alert('Error', 'Please enter your email address');
             return;
         }
 
         setLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+            const redirectUrl = Linking.createURL('reset-password');
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: redirectUrl,
             });
 
             if (error) {
-                Alert.alert('Login Failed', error.message);
+                Alert.alert('Error', error.message);
             } else {
-                // Navigation is handled by RootNavigator listening to auth state
+                Alert.alert(
+                    'Check your email',
+                    'We have sent a password reset link to your email address.',
+                    [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
+                );
             }
         } catch (error) {
             Alert.alert('Error', 'An unexpected error occurred');
@@ -39,12 +44,17 @@ export default function LoginScreen({ navigation }: any) {
     return (
         <KeyboardDismissWrapper>
             <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <ArrowLeft size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Reset Password</Text>
+                </View>
+
                 <View style={styles.content}>
-                    <View style={styles.header}>
-                        <Text style={styles.brand}>ExpiryX</Text>
-                        <Text style={styles.title}>Marketplace</Text>
-                        <Text style={styles.subtitle}>B2B Auction Platform</Text>
-                    </View>
+                    <Text style={styles.description}>
+                        Enter your email address and we'll send you a link to reset your password.
+                    </Text>
 
                     <View style={styles.form}>
                         <View style={styles.inputGroup}>
@@ -60,41 +70,23 @@ export default function LoginScreen({ navigation }: any) {
                             />
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Password</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Enter your password"
-                                placeholderTextColor={COLORS.textMuted}
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                            />
-                            <TouchableOpacity
-                                style={styles.forgotPasswordButton}
-                                onPress={() => navigation.navigate('ForgotPassword')}
-                            >
-                                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-                            </TouchableOpacity>
-                        </View>
-
                         <TouchableOpacity
                             style={[styles.button, loading && styles.buttonDisabled]}
-                            onPress={handleLogin}
+                            onPress={handleResetPassword}
                             disabled={loading}
                         >
                             {loading ? (
                                 <ActivityIndicator color="white" />
                             ) : (
-                                <Text style={styles.buttonText}>Log In</Text>
+                                <Text style={styles.buttonText}>Send Reset Link</Text>
                             )}
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={styles.linkButton}
-                            onPress={() => navigation.navigate('SignUp')}
+                            onPress={() => navigation.navigate('Login')}
                         >
-                            <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+                            <Text style={styles.linkText}>Back to Login</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -108,29 +100,31 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
     },
-    content: {
-        flex: 1,
-        justifyContent: 'center',
-        padding: SPACING.lg,
-    },
     header: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: SPACING.xl,
+        padding: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+        backgroundColor: COLORS.surface,
     },
-    brand: {
-        fontSize: 32,
+    backButton: {
+        marginRight: SPACING.md,
+    },
+    headerTitle: {
+        fontSize: 20,
         fontWeight: 'bold',
-        color: COLORS.primary,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: '600',
         color: COLORS.text,
     },
-    subtitle: {
+    content: {
+        flex: 1,
+        padding: SPACING.lg,
+    },
+    description: {
         fontSize: 16,
         color: COLORS.textMuted,
-        marginTop: SPACING.xs,
+        marginBottom: SPACING.xl,
+        lineHeight: 24,
     },
     form: {
         backgroundColor: COLORS.surface,
@@ -181,14 +175,5 @@ const styles = StyleSheet.create({
     linkText: {
         color: COLORS.primary,
         fontSize: 14,
-    },
-    forgotPasswordButton: {
-        alignSelf: 'flex-end',
-        marginBottom: SPACING.md,
-    },
-    forgotPasswordText: {
-        color: COLORS.primary,
-        fontSize: 14,
-        fontWeight: '500',
     },
 });
