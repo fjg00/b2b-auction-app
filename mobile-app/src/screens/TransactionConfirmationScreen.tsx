@@ -1,32 +1,53 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { CheckCircle, Clock, Truck, CreditCard, ChevronRight, AlertTriangle, MessageSquare, X, Upload, FileText } from 'lucide-react-native';
 
+import { getTransaction, updateTransactionStatus } from '../services/auctionService';
+import { Transaction } from '@shared/types';
+import { useAuth } from '../context/AuthContext';
+
 export default function TransactionConfirmationScreen({ navigation, route }: any) {
-    const [step, setStep] = useState<'payment' | 'receipt' | 'logistics'>('payment');
-    const [role, setRole] = useState<'buyer' | 'seller'>('buyer'); // Dev toggle for testing
+    const { transactionId } = route.params;
+    const { user } = useAuth();
+    const [transaction, setTransaction] = useState<Transaction | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [uploading, setUploading] = useState(false);
+
     const [chatOpen, setChatOpen] = useState(false);
     const [proofOfPayment, setProofOfPayment] = useState<string | null>(null);
 
-    // Mock Transaction Data
-    const transaction = {
-        id: 'TX-998877',
-        auctionId: '13452',
-        lotTitle: 'Industrial Generators (5 units)',
-        quantity: 5,
-        unitPrice: 1000.00,
-        amount: 5000.00,
-        buyerPremium: 250.00,
-        vat: 577.50,
-        totalDue: 5827.50,
-        currency: 'USD',
-        seller: 'Power Systems Ltd.',
-        buyer: 'Construction Co.',
-        dueDate: 'Nov 28, 2025',
-        closedDate: 'Nov 20, 2025 • 10:00 AM',
+    useEffect(() => {
+        loadTransaction();
+    }, [transactionId]);
+
+    const loadTransaction = async () => {
+        if (!transactionId) return;
+        setLoading(true);
+        const data = await getTransaction(transactionId);
+        if (data) {
+            setTransaction(data);
+            if (data.proofOfPaymentUrl) {
+                setProofOfPayment(data.proofOfPaymentUrl);
+            }
+        } else {
+            Alert.alert('Error', 'Transaction not found');
+            navigation.goBack();
+        }
+        setLoading(false);
     };
+
+    // Derive step from status
+    const getStep = () => {
+        if (!transaction) return 'payment';
+        if (transaction.status === 'completed') return 'logistics';
+        if (transaction.status === 'payment_sent') return 'receipt';
+        return 'payment';
+    };
+
+    const step = getStep();
+    const role = user?.id === transaction?.sellerId ? 'seller' : 'buyer';
 
     const handleUploadProof = () => {
         Alert.alert(
@@ -36,14 +57,14 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 { text: "Cancel", style: "cancel" },
                 {
                     text: "Select Image/PDF",
-                    onPress: () => setProofOfPayment("payment_receipt_123.pdf")
+                    onPress: () => setProofOfPayment("payment_receipt_123.pdf") // Mock file selection
                 }
             ]
         );
     };
 
-    const handleConfirmPayment = () => {
-        if (!proofOfPayment) {
+    const handleConfirmPayment = async () => {
+        if (!proofOfPayment || !transaction) {
             Alert.alert("Required", "Please upload proof of payment before confirming.");
             return;
         }
@@ -55,9 +76,17 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 { text: "Cancel", style: "cancel" },
                 {
                     text: "Yes, Payment Sent",
-                    onPress: () => {
-                        setStep('receipt');
-                        setRole('seller'); // Auto-switch to seller for demo flow
+                    onPress: async () => {
+                        setUploading(true);
+                        const result = await updateTransactionStatus(transaction.id, 'payment_sent', proofOfPayment);
+                        setUploading(false);
+
+                        if (result.success) {
+                            loadTransaction();
+                            Alert.alert("Success", "Payment status updated!");
+                        } else {
+                            Alert.alert("Error", result.message);
+                        }
                     }
                 }
             ]
@@ -65,6 +94,8 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
     };
 
     const handleConfirmReceipt = () => {
+        if (!transaction) return;
+
         Alert.alert(
             "Confirm Receipt",
             "Have you received the full amount in your bank account?",
@@ -72,13 +103,32 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 { text: "No", style: "cancel" },
                 {
                     text: "Yes, Payment Received",
-                    onPress: () => {
-                        setStep('logistics');
+                    onPress: async () => {
+                        setUploading(true);
+                        const result = await updateTransactionStatus(transaction.id, 'completed');
+                        setUploading(false);
+
+                        if (result.success) {
+                            loadTransaction();
+                            Alert.alert("Success", "Transaction completed! Logistics unlocked.");
+                        } else {
+                            Alert.alert("Error", result.message);
+                        }
                     }
                 }
             ]
         );
     };
+
+    if (loading) return (
+        <SafeAreaView style={styles.safeArea}>
+            <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        </SafeAreaView>
+    );
+
+    if (!transaction) return null;
 
     const renderHeader = () => (
         <View style={styles.header}>
@@ -86,18 +136,17 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
             <View style={styles.headerContent}>
-                <Text style={styles.title}>Transaction #{transaction.id}</Text>
-                <Text style={styles.subtitle}>{transaction.lotTitle}</Text>
+                <Text style={styles.title}>Transaction #{transaction.id.slice(0, 8)}</Text>
+                <Text style={styles.subtitle}>{transaction.lot?.title}</Text>
             </View>
 
             <TouchableOpacity style={styles.chatButton} onPress={() => setChatOpen(true)}>
                 <MessageSquare size={20} color={COLORS.primary} />
             </TouchableOpacity>
 
-            {/* Dev Toggle for Role */}
             <TouchableOpacity
                 style={styles.devToggle}
-                onPress={() => setRole(r => r === 'buyer' ? 'seller' : 'buyer')}
+                onPress={() => Alert.alert('Dev Info', `Role: ${role}\nStatus: ${transaction.status}`)}
             >
                 <Text style={styles.devToggleText}>{role.toUpperCase()}</Text>
             </TouchableOpacity>
@@ -142,21 +191,21 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             <View style={styles.infoSection}>
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>Auction ID:</Text>
-                    <Text style={styles.infoValue}>{transaction.auctionId}</Text>
+                    <Text style={styles.infoValue}>{transaction.lotId.slice(0, 8)}</Text>
                 </View>
                 <View style={styles.infoRow}>
                     <Text style={styles.infoLabel}>Closed:</Text>
-                    <Text style={styles.infoValue}>{transaction.closedDate}</Text>
+                    <Text style={styles.infoValue}>{new Date(transaction.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Quantity:</Text>
-                    <Text style={styles.infoValue}>{transaction.quantity} units • {transaction.currency} ${transaction.unitPrice} / unit</Text>
+                    <Text style={styles.infoLabel}>Amount:</Text>
+                    <Text style={styles.infoValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
                 </View>
                 {role === 'buyer' && (
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Seller:</Text>
-                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller)}>
-                            <Text style={styles.linkValue}>{transaction.seller}</Text>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller?.name)}>
+                            <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -173,7 +222,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     {/* Payment Deadline */}
                     <View style={styles.deadlineBox}>
                         <Clock size={18} color={COLORS.error} />
-                        <Text style={styles.deadlineText}>Payment Due: {transaction.dueDate}</Text>
+                        <Text style={styles.deadlineText}>Payment Due: {new Date(new Date(transaction.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()}</Text>
                     </View>
 
                     {/* Price Breakdown */}
@@ -184,18 +233,16 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     </View>
                     <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>Buyer Premium (5%)</Text>
-                        <Text style={styles.detailValue}>{transaction.currency} ${transaction.buyerPremium.toLocaleString()}</Text>
+                        <Text style={styles.detailValue}>{transaction.currency} ${(transaction.amount * 0.05).toLocaleString()}</Text>
                     </View>
                     <View style={styles.detailRow}>
                         <Text style={styles.detailLabel}>VAT (11%)</Text>
-                        <Text style={styles.detailValue}>{transaction.currency} ${transaction.vat.toLocaleString()}</Text>
+                        <Text style={styles.detailValue}>{transaction.currency} ${(transaction.amount * 0.11).toLocaleString()}</Text>
                     </View>
-
                     <View style={styles.totalDivider} />
-
                     <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>Total Due</Text>
-                        <Text style={styles.totalValue}>{transaction.currency} ${transaction.totalDue.toLocaleString()}</Text>
+                        <Text style={styles.totalValue}>{transaction.currency} ${(transaction.amount * 1.16).toLocaleString()}</Text>
                     </View>
 
                     <View style={styles.divider} />
@@ -208,7 +255,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Account Name</Text>
-                            <Text style={styles.detailValue}>{transaction.seller}</Text>
+                            <Text style={styles.detailValue}>{transaction.seller?.name}</Text>
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>IBAN</Text>
@@ -256,14 +303,14 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     {/* Buyer Payment Deadline */}
                     <View style={styles.deadlineBox}>
                         <Clock size={18} color={COLORS.error} />
-                        <Text style={styles.deadlineText}>Buyer must pay by: {transaction.dueDate}</Text>
+                        <Text style={styles.deadlineText}>Buyer must pay by: {new Date(new Date(transaction.createdAt).getTime() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString()}</Text>
                     </View>
 
                     {/* Buyer Contact Info */}
                     <View style={styles.infoBox}>
                         <Text style={styles.infoLabel}>Buyer Contact</Text>
-                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer)}>
-                            <Text style={styles.linkValue}>{transaction.buyer}</Text>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer?.name)}>
+                            <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -305,7 +352,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Account Name</Text>
-                            <Text style={styles.detailValue}>{transaction.seller}</Text>
+                            <Text style={styles.detailValue}>{transaction.seller?.name}</Text>
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>IBAN</Text>
@@ -337,17 +384,17 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Buyer</Text>
                 {role === 'seller' ? (
-                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer)}>
-                        <Text style={styles.linkValue}>{transaction.buyer}</Text>
+                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer?.name)}>
+                        <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
                     </TouchableOpacity>
                 ) : (
-                    <Text style={styles.infoValue}>{transaction.buyer}</Text>
+                    <Text style={styles.infoValue}>{transaction.buyer?.name}</Text>
                 )}
                 {role === 'buyer' && (
                     <>
                         <Text style={styles.infoLabel}>Seller</Text>
-                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller)}>
-                            <Text style={styles.linkValue}>{transaction.seller}</Text>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller?.name)}>
+                            <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
                         </TouchableOpacity>
                     </>
                 )}
@@ -389,8 +436,8 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             {role === 'buyer' && (
                 <View style={styles.infoBox}>
                     <Text style={styles.infoLabel}>Seller Contact</Text>
-                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller)}>
-                        <Text style={styles.linkValue}>{transaction.seller}</Text>
+                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller?.name)}>
+                        <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -398,8 +445,8 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             {role === 'seller' && (
                 <View style={styles.infoBox}>
                     <Text style={styles.infoLabel}>Buyer Contact</Text>
-                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer)}>
-                        <Text style={styles.linkValue}>{transaction.buyer}</Text>
+                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer?.name)}>
+                        <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -468,7 +515,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <View style={styles.chatHeader}>
                         <View>
                             <Text style={styles.chatTitle}>Chat with {role === 'buyer' ? 'Seller' : 'Buyer'}</Text>
-                            <Text style={styles.chatSubtitle}>{role === 'buyer' ? transaction.seller : transaction.buyer}</Text>
+                            <Text style={styles.chatSubtitle}>{role === 'buyer' ? transaction.seller?.name : transaction.buyer?.name}</Text>
                         </View>
                         <TouchableOpacity onPress={() => setChatOpen(false)} style={styles.closeButton}>
                             <X size={24} color={COLORS.text} />

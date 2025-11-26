@@ -72,3 +72,22 @@ export interface SellerProfile extends Seller {
     reviews: Review[];
     pickupLocations: { address: string; notes: string }[];
 }
+
+export type TransactionStatus = 'pending_payment' | 'payment_sent' | 'completed' | 'cancelled';
+
+export interface Transaction {
+    id: string;
+    lotId: string;
+    buyerId: string;
+    sellerId: string;
+    amount: number;
+    currency: string;
+    status: TransactionStatus;
+    proofOfPaymentUrl?: string;
+    createdAt: string;
+    updatedAt: string;
+    // Joined fields
+    lot?: Lot;
+    buyer?: { name: string; email: string };
+    seller?: { name: string; email: string };
+}

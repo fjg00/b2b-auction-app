@@ -313,3 +313,133 @@ export const createLot = async (formData: any, userId: string): Promise<{ succes
         return { success: false, message: 'An unexpected error occurred.' };
     }
 };
+
+// --- Transaction Services ---
+
+import { Transaction } from '@shared/types';
+
+export const createTransaction = async (lotId: string, buyerId: string, amount: number): Promise<{ success: boolean; transactionId?: string; message: string }> => {
+    try {
+        // 1. Get seller ID from lot
+        const { data: lot, error: lotError } = await supabase
+            .from('lots')
+            .select('seller_id')
+            .eq('id', lotId)
+            .single();
+
+        if (lotError || !lot) {
+            return { success: false, message: 'Lot not found' };
+        }
+
+        // 2. Create transaction
+        const { data: transaction, error: txError } = await supabase
+            .from('transactions')
+            .insert([
+                {
+                    lot_id: lotId,
+                    buyer_id: buyerId,
+                    seller_id: lot.seller_id,
+                    amount: amount,
+                    status: 'pending_payment'
+                }
+            ])
+            .select()
+            .single();
+
+        if (txError) {
+            console.error('Error creating transaction:', txError);
+            return { success: false, message: 'Failed to create transaction.' };
+        }
+
+        // 3. Mark lot as 'won' (or 'sold' if we want to distinguish)
+        // For now, let's keep it simple and just create the transaction. 
+        // Ideally we should also update lot status to prevent double buying.
+        await supabase.from('lots').update({ status: 'won' }).eq('id', lotId);
+
+        return { success: true, transactionId: transaction.id, message: 'Transaction created!' };
+    } catch (error) {
+        console.error('Unexpected error creating transaction:', error);
+        return { success: false, message: 'An unexpected error occurred.' };
+    }
+};
+
+export const getTransaction = async (id: string): Promise<Transaction | undefined> => {
+    try {
+        const { data: tx, error } = await supabase
+            .from('transactions')
+            .select(`
+                *,
+                lot:lots(*),
+                buyer:users!buyer_id(full_name, email),
+                seller:users!seller_id(full_name, email)
+            `)
+            .eq('id', id)
+            .single();
+
+        if (error || !tx) {
+            console.error('Error fetching transaction:', error);
+            return undefined;
+        }
+
+        // Map to UI Transaction type
+        return {
+            id: tx.id,
+            lotId: tx.lot_id,
+            buyerId: tx.buyer_id,
+            sellerId: tx.seller_id,
+            amount: tx.amount,
+            currency: tx.currency,
+            status: tx.status,
+            proofOfPaymentUrl: tx.proof_of_payment_url,
+            createdAt: tx.created_at,
+            updatedAt: tx.updated_at,
+            lot: {
+                id: tx.lot.id,
+                title: tx.lot.title,
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop', // Placeholder
+                location: 'Beirut', // Placeholder
+                expiryDate: tx.lot.end_time,
+                condition: 'Overstock', // Placeholder
+                currentBid: tx.amount,
+                endTime: new Date(tx.lot.end_time),
+                status: 'won',
+                seller_id: tx.seller_id
+            },
+            buyer: {
+                name: tx.buyer?.full_name || 'Unknown Buyer',
+                email: tx.buyer?.email || ''
+            },
+            seller: {
+                name: tx.seller?.full_name || 'Unknown Seller',
+                email: tx.seller?.email || ''
+            }
+        };
+    } catch (error) {
+        console.error('Unexpected error fetching transaction:', error);
+        return undefined;
+    }
+};
+
+export const updateTransactionStatus = async (id: string, status: string, proofUrl?: string): Promise<{ success: boolean; message: string }> => {
+    try {
+        const updates: any = { status };
+        if (proofUrl) {
+            updates.proof_of_payment_url = proofUrl;
+        }
+
+        const { error } = await supabase
+            .from('transactions')
+            .update(updates)
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error updating transaction:', error);
+            return { success: false, message: 'Failed to update transaction.' };
+        }
+
+        return { success: true, message: 'Transaction updated successfully!' };
+    } catch (error) {
+        console.error('Unexpected error updating transaction:', error);
+        return { success: false, message: 'An unexpected error occurred.' };
+    }
+};

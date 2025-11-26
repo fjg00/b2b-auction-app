@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { fetchLotById, placeBid } from '../services/auctionService';
+import { fetchLotById, placeBid, createTransaction } from '../services/auctionService';
 import { Lot } from '@shared/types';
 import { Clock, MapPin, Package, Truck, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
@@ -93,6 +93,36 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
         }
     };
 
+    const handleBuyNow = async () => {
+        if (!lot || !user) {
+            Alert.alert('Error', 'You must be logged in to buy');
+            return;
+        }
+
+        Alert.alert(
+            "Buy Now",
+            `Are you sure you want to purchase this item for $${(lot.buyNowPrice || lot.currentBid).toLocaleString()}?`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Confirm Purchase",
+                    onPress: async () => {
+                        setSubmitting(true);
+                        const amount = lot.buyNowPrice || lot.currentBid;
+                        const result = await createTransaction(lot.id, user.id, amount);
+                        setSubmitting(false);
+
+                        if (result.success && result.transactionId) {
+                            navigation.navigate('TransactionConfirmation', { transactionId: result.transactionId });
+                        } else {
+                            Alert.alert('Error', result.message);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     if (loading) return <ActivityIndicator style={styles.center} size="large" color={COLORS.primary} />;
     if (!lot) return <View style={styles.center}><Text>Lot not found</Text></View>;
 
@@ -171,6 +201,16 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                                 disabled={submitting}
                             >
                                 <Text style={styles.bidButtonText}>{submitting ? 'Placing Bid...' : 'Place Bid'}</Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.divider} />
+
+                            <TouchableOpacity
+                                style={[styles.buyNowButton, submitting && styles.disabledButton]}
+                                onPress={handleBuyNow}
+                                disabled={submitting}
+                            >
+                                <Text style={styles.buyNowText}>Buy Now for ${(lot.buyNowPrice || lot.currentBid).toLocaleString()}</Text>
                             </TouchableOpacity>
                         </View>
                     )}
@@ -419,5 +459,22 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: COLORS.primary,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: COLORS.border,
+        marginVertical: SPACING.md,
+    },
+    buyNowButton: {
+        backgroundColor: COLORS.secondary,
+        padding: SPACING.md,
+        borderRadius: RADIUS.md,
+        alignItems: 'center',
+        marginTop: SPACING.sm,
+    },
+    buyNowText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 });
