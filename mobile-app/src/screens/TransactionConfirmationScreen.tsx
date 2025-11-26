@@ -96,6 +96,12 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
     const handleConfirmReceipt = () => {
         if (!transaction) return;
 
+        // Enforce that buyer must have sent payment first
+        if (transaction.status !== 'payment_sent') {
+            Alert.alert("Wait", "The buyer must confirm they have sent the payment first.");
+            return;
+        }
+
         Alert.alert(
             "Confirm Receipt",
             "Have you received the full amount in your bank account?",
@@ -342,6 +348,13 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         <Clock size={20} color={COLORS.textMuted} />
                         <Text style={styles.waitingText}>Waiting for buyer to send payment...</Text>
                     </View>
+
+                    <TouchableOpacity
+                        style={[styles.primaryButton, styles.disabledButton]}
+                        disabled={true}
+                    >
+                        <Text style={styles.primaryButtonText}>Confirm Payment Received</Text>
+                    </TouchableOpacity>
 
                     {/* Seller's Bank Details Reference */}
                     <View style={styles.bankDetails}>
