@@ -86,8 +86,23 @@ export interface Transaction {
     proofOfPaymentUrl?: string;
     createdAt: string;
     updatedAt: string;
+    releaseCode?: string;
     // Joined fields
-    lot?: Lot;
+    lot?: Lot & {
+        warehouse?: {
+            address?: string;
+            city?: string;
+            pickupWindows?: string;
+            notes?: string;
+            contactName?: string;
+            phone?: string;
+        };
+    };
     buyer?: { name: string; email: string };
-    seller?: { name: string; email: string };
+    seller?: {
+        name: string;
+        email: string;
+        bankName?: string;
+        iban?: string;
+    };
 }

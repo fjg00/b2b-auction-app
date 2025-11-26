@@ -257,7 +257,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         <Text style={styles.sectionHeader}>Bank Details</Text>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Bank Name</Text>
-                            <Text style={styles.detailValue}>Global Bank Corp</Text>
+                            <Text style={styles.detailValue}>{transaction.seller?.bankName || 'Not provided'}</Text>
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Account Name</Text>
@@ -265,7 +265,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>IBAN</Text>
-                            <Text style={styles.detailValue}>US12 3456 7890 1234 5678</Text>
+                            <Text style={styles.detailValue}>{transaction.seller?.iban || 'Not provided'}</Text>
                         </View>
                     </View>
 
@@ -361,7 +361,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         <Text style={styles.sectionHeader}>Your Bank Details (Reference)</Text>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Bank Name</Text>
-                            <Text style={styles.detailValue}>Global Bank Corp</Text>
+                            <Text style={styles.detailValue}>{transaction.seller?.bankName || 'Not provided'}</Text>
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Account Name</Text>
@@ -369,7 +369,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         </View>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>IBAN</Text>
-                            <Text style={styles.detailValue}>US12 3456 7890 1234 5678</Text>
+                            <Text style={styles.detailValue}>{transaction.seller?.iban || 'Not provided'}</Text>
                         </View>
                     </View>
                 </>
@@ -474,8 +474,8 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <View>
                         <Text style={styles.detailValue}>Pickup at Seller's Warehouse</Text>
                         <Text style={styles.subDetailText}>
-                            123 Industrial Park, Sector 7{'\n'}
-                            New York, NY 10001
+                            {transaction.lot?.warehouse?.address || 'Address not provided'}{'\n'}
+                            {transaction.lot?.warehouse?.city || ''}
                         </Text>
                     </View>
                 </View>
@@ -486,7 +486,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <Clock size={20} color={COLORS.text} />
                     <View>
                         <Text style={styles.detailValue}>Pickup Window</Text>
-                        <Text style={styles.subDetailText}>Mon - Fri • 9:00 AM - 5:00 PM</Text>
+                        <Text style={styles.subDetailText}>{transaction.lot?.warehouse?.pickupWindows || 'Contact seller for details'}</Text>
                     </View>
                 </View>
 
@@ -494,7 +494,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <AlertTriangle size={20} color={COLORS.text} />
                     <View>
                         <Text style={styles.detailValue}>Site Instructions</Text>
-                        <Text style={styles.subDetailText}>Enter via Gate 3. Safety vest required.</Text>
+                        <Text style={styles.subDetailText}>{transaction.lot?.warehouse?.notes || 'No special instructions'}</Text>
                     </View>
                 </View>
 
@@ -502,14 +502,14 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     <MessageSquare size={20} color={COLORS.text} />
                     <View>
                         <Text style={styles.detailValue}>Site Contact</Text>
-                        <Text style={styles.subDetailText}>Mike Ross (Logistics Mgr) • +1 555-0199</Text>
+                        <Text style={styles.subDetailText}>{transaction.lot?.warehouse?.contactName || transaction.seller?.name} • {transaction.lot?.warehouse?.phone || 'Contact via chat'}</Text>
                     </View>
                 </View>
             </View>
 
             <View style={styles.releaseCodeBox}>
                 <Text style={styles.releaseCodeLabel}>RELEASE CODE</Text>
-                <Text style={styles.releaseCodeValue}>REL-8899-X</Text>
+                <Text style={styles.releaseCodeValue}>{transaction.releaseCode || `REL-${transaction.id.slice(0, 8).toUpperCase()}`}</Text>
                 <Text style={styles.releaseCodeHint}>Present this code to claim goods</Text>
             </View>
         </View>
