@@ -555,7 +555,7 @@ export const getTransactionByLotId = async (lotId: string, userId: string): Prom
             .from('transactions')
             .select('id')
             .eq('lot_id', lotId)
-            .eq('buyer_id', userId)
+            .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
             .order('created_at', { ascending: false })
             .limit(1)
             .maybeSingle();

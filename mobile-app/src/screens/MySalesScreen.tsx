@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
@@ -37,9 +37,17 @@ export default function MySalesScreen({ navigation }: any) {
         }
     };
 
-    const handlePress = (item: Lot) => {
+    const handlePress = async (item: Lot) => {
         if (item.status === 'won') {
-            navigation.navigate('Transaction', { lotId: item.id, role: 'seller' });
+            // Fetch the transaction for this lot
+            const { getTransactionByLotId } = require('../services/auctionService');
+            const transaction = await getTransactionByLotId(item.id, user!.id);
+
+            if (transaction?.id) {
+                navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
+            } else {
+                Alert.alert('Error', 'Transaction not found for this item');
+            }
         } else {
             navigation.navigate('ItemDetails', { id: item.id, isSeller: true });
         }
