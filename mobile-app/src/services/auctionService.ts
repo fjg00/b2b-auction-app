@@ -288,12 +288,17 @@ export const placeBid = async (lotId: string, amount: number, userId: string): P
         // 1. Check if user is trying to bid on their own lot
         const { data: lot, error: lotError } = await supabase
             .from('lots')
-            .select('seller_id, start_price, min_bid_increment')
+            .select('seller_id, start_price, min_bid_increment, status')
             .eq('id', lotId)
             .single();
 
         if (lotError || !lot) {
             return { success: false, message: 'Lot not found' };
+        }
+
+        // Check if lot is active
+        if (lot.status !== 'ACTIVE') {
+            return { success: false, message: 'This auction is no longer active' };
         }
 
         // Prevent sellers from bidding on their own lots
@@ -362,15 +367,19 @@ import { Transaction } from '@shared/types';
 
 export const createTransaction = async (lotId: string, buyerId: string, amount: number): Promise<{ success: boolean; transactionId?: string; message: string }> => {
     try {
-        // 1. Get seller ID from lot
+        // 1. Get seller ID and status from lot
         const { data: lot, error: lotError } = await supabase
             .from('lots')
-            .select('seller_id')
+            .select('seller_id, status')
             .eq('id', lotId)
             .single();
 
         if (lotError || !lot) {
             return { success: false, message: 'Lot not found' };
+        }
+
+        if (lot.status !== 'ACTIVE') {
+            return { success: false, message: 'This item is no longer available' };
         }
 
         // 2. Create transaction

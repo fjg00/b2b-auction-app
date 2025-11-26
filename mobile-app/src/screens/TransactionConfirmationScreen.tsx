@@ -181,10 +181,9 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 <Text style={styles.subtitle}>{transaction.lot?.title}</Text>
             </View>
 
-            {/* Chat temporarily disabled - will implement proper chat system later */}
-            {/* <TouchableOpacity style={styles.chatButton} onPress={() => setChatOpen(true)}>
+            <TouchableOpacity style={styles.chatButton} onPress={() => setChatOpen(true)}>
                 <MessageSquare size={20} color={COLORS.primary} />
-            </TouchableOpacity> */}
+            </TouchableOpacity>
         </View>
     );
 
