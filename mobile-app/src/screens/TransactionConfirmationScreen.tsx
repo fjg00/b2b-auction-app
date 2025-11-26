@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator, TextInput } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { CheckCircle, Clock, Truck, CreditCard, ChevronRight, AlertTriangle, MessageSquare, X, Upload, FileText } from 'lucide-react-native';
-import { pickDocument, uploadFile } from '../services/storageService';
+import { CheckCircle, Clock, Truck, CreditCard, ChevronRight, AlertTriangle, MessageSquare, X, Upload, FileText, Send } from 'lucide-react-native';
+
 import { getTransaction, updateTransactionStatus } from '../services/auctionService';
 import { Transaction } from '@shared/types';
 import { useAuth } from '../context/AuthContext';
+import { pickDocument, uploadFile } from '../services/storageService';
+import { fetchMessages, sendMessage, subscribeToMessages, Message } from '../services/chatService';
 
 export default function TransactionConfirmationScreen({ navigation, route }: any) {
     const { transactionId } = route.params;
@@ -14,13 +16,28 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
     const [transaction, setTransaction] = useState<Transaction | null>(null);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [isPicking, setIsPicking] = useState(false);
 
     const [chatOpen, setChatOpen] = useState(false);
     const [proofOfPayment, setProofOfPayment] = useState<string | null>(null);
     const [chatMessage, setChatMessage] = useState('');
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [sending, setSending] = useState(false);
+
+    const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
         loadTransaction();
+        if (transactionId) {
+            loadMessages();
+            const subscription = subscribeToMessages(transactionId, (payload) => {
+                console.log('New message received:', payload);
+                loadMessages();
+            });
+            return () => {
+                subscription.unsubscribe();
+            };
+        }
     }, [transactionId]);
 
     const loadTransaction = async () => {
@@ -39,6 +56,19 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
         setLoading(false);
     };
 
+    const loadMessages = async () => {
+        try {
+            const msgs = await fetchMessages(transactionId);
+            setMessages(msgs);
+            // Scroll to bottom after loading
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    };
+
     // Derive step from status
     const getStep = () => {
         if (!transaction) return 'payment';
@@ -52,18 +82,29 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
     const role = user?.id === transaction?.sellerId ? 'seller' : 'buyer';
 
     const handleUploadProof = async () => {
-        const file = await pickDocument();
-        if (!file) return;
+        if (isPicking) return;
+        setIsPicking(true);
+        try {
+            const file = await pickDocument();
+            if (!file) return;
 
-        setUploading(true);
-        const publicUrl = await uploadFile(file, 'transaction-proofs', `proof_${transactionId}_${Date.now()}`);
-        setUploading(false);
+            setUploading(true);
+            const path = `proofs/${transactionId}/${Date.now()}_${file.name}`;
+            const publicUrl = await uploadFile(file, 'transaction-proofs', path);
+            setUploading(false);
 
-        if (publicUrl) {
-            setProofOfPayment(publicUrl);
-            Alert.alert('Success', 'Proof of payment uploaded successfully!');
-        } else {
-            Alert.alert('Error', 'Failed to upload proof of payment.');
+            if (publicUrl) {
+                setProofOfPayment(publicUrl);
+                Alert.alert('Success', 'Proof of payment uploaded successfully!');
+            } else {
+                Alert.alert('Error', 'Failed to upload proof of payment.');
+            }
+        } catch (error) {
+            console.error('Upload proof error:', error);
+            Alert.alert('Error', 'Failed to pick document');
+        } finally {
+            setIsPicking(false);
+            setUploading(false);
         }
     };
 
@@ -163,6 +204,25 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
         );
     };
 
+    const handleSendMessage = async () => {
+        if (!chatMessage.trim() || !user || !transaction || sending) return;
+
+        const content = chatMessage.trim();
+        setChatMessage('');
+        setSending(true);
+
+        try {
+            await sendMessage(transaction.id, user.id, content);
+            loadMessages();
+        } catch (error) {
+            console.error('Send message error:', error);
+            Alert.alert('Error', 'Failed to send message');
+            setChatMessage(content);
+        } finally {
+            setSending(false);
+        }
+    };
+
     if (loading) return (
         <SafeAreaView style={styles.safeArea}>
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -240,7 +300,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 {role === 'buyer' && (
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Seller:</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.sellerId })}>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller?.name)}>
                             <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
                         </TouchableOpacity>
                     </View>
@@ -299,7 +359,10 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         </View>
                     </View>
 
+                    {/* Proof of Payment Upload */}
                     <View style={styles.uploadSection}>
+                        <Text style={styles.sectionHeader}>Proof of Payment</Text>
+
                         {proofOfPayment ? (
                             <View style={styles.filePreview}>
                                 <FileText size={24} color={COLORS.primary} />
@@ -311,8 +374,8 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                                 </TouchableOpacity>
                             </View>
                         ) : (
-                            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadProof} disabled={uploading}>
-                                {uploading ? (
+                            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadProof} disabled={uploading || isPicking}>
+                                {uploading || isPicking ? (
                                     <ActivityIndicator color={COLORS.primary} />
                                 ) : (
                                     <>
@@ -350,7 +413,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     {/* Buyer Contact Info */}
                     <View style={styles.infoBox}>
                         <Text style={styles.infoLabel}>Buyer Contact</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.buyerId })}>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer?.name)}>
                             <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
                         </TouchableOpacity>
                     </View>
@@ -411,6 +474,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             )}
         </View>
     );
+
     const renderReceiptStep = () => (
         <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -435,17 +499,17 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Buyer</Text>
                 {role === 'seller' ? (
-                    <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.buyerId })}>
-                        <Text style={[styles.linkValue, { marginBottom: SPACING.md }]}>{transaction.buyer?.name}</Text>
+                    <TouchableOpacity onPress={() => Alert.alert('Navigate to Buyer Profile', transaction.buyer?.name)}>
+                        <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
                     </TouchableOpacity>
                 ) : (
-                    <Text style={[styles.infoValue, { marginBottom: SPACING.md }]}>{transaction.buyer?.name}</Text>
+                    <Text style={styles.infoValue}>{transaction.buyer?.name}</Text>
                 )}
                 {role === 'buyer' && (
                     <>
                         <Text style={styles.infoLabel}>Seller</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.sellerId })}>
-                            <Text style={[styles.linkValue, { marginBottom: SPACING.md }]}>{transaction.seller?.name}</Text>
+                        <TouchableOpacity onPress={() => Alert.alert('Navigate to Seller Profile', transaction.seller?.name)}>
+                            <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
                         </TouchableOpacity>
                     </>
                 )}
@@ -548,7 +612,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             </View>
 
             {role === 'seller' && (
-                <TouchableOpacity style={[styles.primaryButton, { marginTop: SPACING.lg }]} onPress={handleConfirmHandover}>
+                <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmHandover}>
                     <Text style={styles.primaryButtonText}>Confirm Goods Released</Text>
                 </TouchableOpacity>
             )}
@@ -605,7 +669,10 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             transparent={true}
             onRequestClose={() => setChatOpen(false)}
         >
-            <View style={styles.modalOverlay}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                style={styles.modalOverlay}
+            >
                 <TouchableOpacity
                     style={styles.modalBackdrop}
                     activeOpacity={1}
@@ -622,13 +689,31 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.chatMessages}>
-                        <View style={styles.messageBubble}>
-                            <Text style={styles.messageText}>
-                                Congratulations on winning the lot! Let me know when you've made the payment.
-                            </Text>
-                            <Text style={styles.messageTime}>10:30 AM</Text>
-                        </View>
+                    <ScrollView
+                        style={styles.chatMessages}
+                        ref={scrollViewRef}
+                        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                    >
+                        {messages.length === 0 ? (
+                            <Text style={{ textAlign: 'center', color: COLORS.textMuted, marginTop: 20 }}>No messages yet.</Text>
+                        ) : (
+                            messages.map((msg) => (
+                                <View key={msg.id} style={[
+                                    styles.messageBubble,
+                                    msg.sender_id === user?.id ? styles.myMessage : styles.theirMessage
+                                ]}>
+                                    <Text style={[
+                                        styles.messageText,
+                                        msg.sender_id === user?.id ? styles.myMessageText : styles.theirMessageText
+                                    ]}>
+                                        {msg.content}
+                                    </Text>
+                                    <Text style={styles.messageTime}>
+                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </Text>
+                                </View>
+                            ))
+                        )}
                     </ScrollView>
 
                     <View style={styles.chatInputContainer}>
@@ -641,19 +726,19 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                             multiline
                         />
                         <TouchableOpacity
-                            style={styles.sendButton}
-                            onPress={() => {
-                                if (chatMessage.trim()) {
-                                    Alert.alert('Message Sent', chatMessage);
-                                    setChatMessage('');
-                                }
-                            }}
+                            style={[styles.sendButton, sending && { opacity: 0.7 }]}
+                            onPress={handleSendMessage}
+                            disabled={sending}
                         >
-                            <Text style={styles.sendButtonText}>Send</Text>
+                            {sending ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <Send size={20} color="white" />
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         </Modal>
     );
 
@@ -711,15 +796,6 @@ const styles = StyleSheet.create({
     subtitle: {
         fontSize: 14,
         color: COLORS.textMuted,
-    },
-    devToggle: {
-        backgroundColor: '#eee',
-        padding: 4,
-        borderRadius: 4,
-    },
-    devToggleText: {
-        fontSize: 10,
-        fontWeight: 'bold',
     },
     stepperContainer: {
         flexDirection: 'row',
@@ -825,7 +901,6 @@ const styles = StyleSheet.create({
     detailValue: {
         color: COLORS.text,
         fontWeight: '500',
-        fontSize: 14,
     },
     primaryButton: {
         backgroundColor: COLORS.primary,
@@ -1059,15 +1134,27 @@ const styles = StyleSheet.create({
         padding: SPACING.md,
     },
     messageBubble: {
-        backgroundColor: '#E0F2F1',
         padding: SPACING.sm,
         borderRadius: RADIUS.md,
-        alignSelf: 'flex-start',
         maxWidth: '80%',
+        marginBottom: 8,
+    },
+    myMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: COLORS.primary,
+    },
+    theirMessage: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#E0F2F1',
     },
     messageText: {
-        color: COLORS.text,
         lineHeight: 20,
+    },
+    myMessageText: {
+        color: 'white',
+    },
+    theirMessageText: {
+        color: COLORS.text,
     },
     messageTime: {
         fontSize: 10,
@@ -1083,6 +1170,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-end',
         gap: SPACING.sm,
+        paddingBottom: Platform.OS === 'ios' ? 30 : SPACING.md,
     },
     chatInput: {
         flex: 1,

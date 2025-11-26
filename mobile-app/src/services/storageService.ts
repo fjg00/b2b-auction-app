@@ -28,7 +28,11 @@ export const pickDocument = async (): Promise<PickedFile | null> => {
             mimeType: asset.mimeType,
             size: asset.size,
         };
-    } catch (error) {
+    } catch (error: any) {
+        // Ignore specific concurrency error from expo-document-picker
+        if (error.message && (error.message.includes('different document picking in progress') || error.message.includes('already active'))) {
+            return null;
+        }
         console.error('Error picking document:', error);
         return null;
     }

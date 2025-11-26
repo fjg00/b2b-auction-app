@@ -1,42 +1,28 @@
--- STORAGE POLICIES FOR 'verification-documents' BUCKET
+-- Create storage buckets if they don't exist
+insert into storage.buckets (id, name, public)
+values ('lot-images', 'lot-images', true)
+on conflict (id) do nothing;
 
--- 1. Allow authenticated users to upload verification documents
--- (Only to their own folder)
-CREATE POLICY "Authenticated Upload Verification"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'verification-documents' 
-  AND auth.role() = 'authenticated'
-  AND (storage.foldername(name))[2] = auth.uid()::text
-);
+insert into storage.buckets (id, name, public)
+values ('transaction-proofs', 'transaction-proofs', true)
+on conflict (id) do nothing;
 
--- 2. Allow users to view ONLY their own verification documents
-CREATE POLICY "Owner Read Verification"
-ON storage.objects FOR SELECT
-USING ( 
-  bucket_id = 'verification-documents' 
-  AND auth.role() = 'authenticated'
-  AND (storage.foldername(name))[2] = auth.uid()::text
-);
+-- Policy to allow anyone to view lot images
+create policy "Public Access"
+  on storage.objects for select
+  using ( bucket_id = 'lot-images' );
 
+-- Policy to allow authenticated users to upload lot images
+create policy "Authenticated users can upload"
+  on storage.objects for insert
+  with check ( bucket_id = 'lot-images' and auth.role() = 'authenticated' );
 
--- STORAGE POLICIES FOR 'avatars' BUCKET
+-- Policy to allow anyone to view transaction proofs (for now, refine later)
+create policy "Public Access Proofs"
+  on storage.objects for select
+  using ( bucket_id = 'transaction-proofs' );
 
--- 1. Allow authenticated users to upload avatars
-CREATE POLICY "Authenticated Upload Avatars"
-ON storage.objects FOR INSERT
-WITH CHECK (
-  bucket_id = 'avatars' 
-  AND auth.role() = 'authenticated'
-);
-
--- 2. Allow public access to view avatars
-CREATE POLICY "Public Read Avatars"
-ON storage.objects FOR SELECT
-USING ( bucket_id = 'avatars' );
-
--- 3. Allow users to update their own avatars
-CREATE POLICY "Users can update own avatars"
-ON storage.objects FOR UPDATE
-USING ( bucket_id = 'avatars' AND auth.uid() = owner )
-WITH CHECK ( bucket_id = 'avatars' AND auth.uid() = owner );
+-- Policy to allow authenticated users to upload transaction proofs
+create policy "Authenticated users can upload proofs"
+  on storage.objects for insert
+  with check ( bucket_id = 'transaction-proofs' and auth.role() = 'authenticated' );
