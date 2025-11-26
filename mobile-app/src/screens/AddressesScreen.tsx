@@ -827,4 +827,58 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
+    dropdownList: {
+        backgroundColor: COLORS.surface,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+        borderRadius: RADIUS.md,
+        overflow: 'hidden',
+    },
+    dropdownItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
+    },
+    dropdownItemActive: {
+        backgroundColor: COLORS.primaryLight,
+    },
+    radioButton: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: COLORS.textMuted,
+        marginRight: SPACING.sm,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    radioButtonActive: {
+        borderColor: COLORS.primary,
+    },
+    radioDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: COLORS.primary,
+    },
+    dropdownText: {
+        fontSize: 16,
+        color: COLORS.text,
+    },
+    dropdownTextActive: {
+        color: COLORS.primary,
+        fontWeight: '600',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: SPACING.md,
+        color: COLORS.textMuted,
+        fontSize: 16,
+    },
 });

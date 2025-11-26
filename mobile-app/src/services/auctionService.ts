@@ -149,8 +149,9 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
         if (error) throw error;
         if (!lots) return [];
 
-        // Fetch bids for these lots
         const lotIds = lots.map((l: any) => l.id);
+
+        // Fetch bids for these lots
         const { data: allBids } = await supabase
             .from('bids')
             .select('lot_id, amount')
@@ -165,8 +166,18 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
             });
         });
 
+        // Fetch transactions to verify sold status
+        const { data: transactions } = await supabase
+            .from('transactions')
+            .select('lot_id')
+            .in('lot_id', lotIds);
+
+        const soldLotIds = new Set(transactions?.map((t: any) => t.lot_id));
+
         return lots.map((lot: any) => {
             const bidInfo = bidsMap.get(lot.id) || { maxBid: 0, count: 0 };
+            const isSold = soldLotIds.has(lot.id) || lot.status === 'won' || lot.status === 'WON';
+
             return {
                 id: lot.id,
                 title: lot.title,
@@ -179,7 +190,7 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 minBidIncrement: lot.min_bid_increment,
                 buyNowPrice: lot.buy_now_price,
                 endTime: new Date(lot.end_time),
-                status: lot.status.toLowerCase(),
+                status: isSold ? 'won' : lot.status.toLowerCase(),
                 bidsCount: bidInfo.count,
                 watchCount: 0,
                 description: lot.description,

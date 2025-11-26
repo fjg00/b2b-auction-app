@@ -14,6 +14,8 @@ export default function MySalesScreen({ navigation }: any) {
     const [sales, setSales] = useState<Lot[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [activeTab, setActiveTab] = useState<'active' | 'sold'>('active');
+
     useFocusEffect(
         useCallback(() => {
             if (user) {
@@ -47,6 +49,11 @@ export default function MySalesScreen({ navigation }: any) {
         navigation.navigate('CreateLot');
     };
 
+    const filteredSales = sales.filter(item => {
+        if (activeTab === 'active') return item.status === 'active';
+        return item.status === 'won';
+    });
+
     if (loading) {
         return (
             <View style={styles.center}>
@@ -65,18 +72,41 @@ export default function MySalesScreen({ navigation }: any) {
                 </TouchableOpacity>
             </View>
 
-            {sales.length === 0 ? (
+            <View style={styles.tabContainer}>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
+                    onPress={() => setActiveTab('active')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>Active Listings</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'sold' && styles.activeTab]}
+                    onPress={() => setActiveTab('sold')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'sold' && styles.activeTabText]}>Sold Items</Text>
+                </TouchableOpacity>
+            </View>
+
+            {filteredSales.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyTitle}>No items listed yet</Text>
-                    <Text style={styles.emptyText}>Start selling by listing your first item</Text>
-                    <TouchableOpacity style={styles.emptyButton} onPress={handleCreateLot}>
-                        <PlusCircle size={20} color={COLORS.primary} />
-                        <Text style={styles.emptyButtonText}>List Your First Item</Text>
-                    </TouchableOpacity>
+                    <Text style={styles.emptyTitle}>
+                        {activeTab === 'active' ? 'No active listings' : 'No sold items yet'}
+                    </Text>
+                    <Text style={styles.emptyText}>
+                        {activeTab === 'active'
+                            ? 'Start selling by listing your first item'
+                            : 'Items you sell will appear here'}
+                    </Text>
+                    {activeTab === 'active' && (
+                        <TouchableOpacity style={styles.emptyButton} onPress={handleCreateLot}>
+                            <PlusCircle size={20} color={COLORS.primary} />
+                            <Text style={styles.emptyButtonText}>List Your First Item</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             ) : (
                 <FlatList
-                    data={sales}
+                    data={filteredSales}
                     keyExtractor={item => item.id}
                     renderItem={({ item }) => (
                         <SellerLotCard lot={item} onPress={() => handlePress(item)} />
@@ -125,6 +155,29 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        padding: SPACING.md,
+        backgroundColor: COLORS.surface,
+        gap: SPACING.md,
+    },
+    tab: {
+        flex: 1,
+        paddingVertical: SPACING.sm,
+        alignItems: 'center',
+        borderRadius: RADIUS.full,
+        backgroundColor: COLORS.background,
+    },
+    activeTab: {
+        backgroundColor: COLORS.primary,
+    },
+    tabText: {
+        fontWeight: '600',
+        color: COLORS.textMuted,
+    },
+    activeTabText: {
+        color: 'white',
     },
     list: {
         padding: SPACING.md,
