@@ -90,10 +90,15 @@ export default function MyBidsScreen({ navigation }: any) {
                         } else {
                             const tx = item as unknown as Transaction;
                             if (!tx.lot) return null;
+
+                            const { label, color } = getStatusDetails(tx.status);
+
                             return (
                                 <LotCard
                                     lot={{ ...tx.lot, status: 'won' }}
                                     onPress={() => handleTransactionPress(tx)}
+                                    statusLabel={label}
+                                    statusColor={color}
                                 />
                             );
                         }
@@ -111,6 +116,23 @@ export default function MyBidsScreen({ navigation }: any) {
         </SafeAreaView>
     );
 }
+
+const getStatusDetails = (status: string) => {
+    switch (status) {
+        case 'pending_payment':
+            return { label: 'Pending Payment', color: '#f59e0b' }; // Orange
+        case 'payment_sent':
+            return { label: 'Payment Sent', color: '#3b82f6' }; // Blue
+        case 'payment_confirmed':
+            return { label: 'Payment Confirmed', color: '#10b981' }; // Green
+        case 'completed':
+            return { label: 'Completed', color: '#10b981' }; // Green
+        case 'cancelled':
+            return { label: 'Cancelled', color: COLORS.error };
+        default:
+            return { label: 'Won', color: '#10b981' };
+    }
+};
 
 const styles = StyleSheet.create({
     container: {

@@ -7,9 +7,11 @@ import { Lot } from '@shared/types';
 interface LotCardProps {
     lot: Lot;
     onPress: () => void;
+    statusLabel?: string;
+    statusColor?: string;
 }
 
-export const LotCard: React.FC<LotCardProps> = ({ lot, onPress }) => {
+export const LotCard: React.FC<LotCardProps> = ({ lot, onPress, statusLabel, statusColor }) => {
     const [timeLeft, setTimeLeft] = React.useState('');
 
     React.useEffect(() => {
@@ -73,7 +75,13 @@ export const LotCard: React.FC<LotCardProps> = ({ lot, onPress }) => {
                         <Text style={styles.price}>${lot.currentBid.toLocaleString()}</Text>
                     </View>
 
-                    {lot.status === 'won' ? (
+                    {statusLabel ? (
+                        <View style={[styles.wonBadge, statusColor ? { backgroundColor: statusColor + '20' } : {}]}>
+                            <Text style={[styles.wonText, statusColor ? { color: statusColor } : {}]}>
+                                {statusLabel}
+                            </Text>
+                        </View>
+                    ) : lot.status === 'won' ? (
                         <View style={styles.wonBadge}>
                             <Text style={styles.wonText}>WON</Text>
                         </View>
