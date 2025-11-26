@@ -27,13 +27,8 @@ export default function HomeScreen({ navigation }: any) {
         setLoading(true);
         try {
             const data = await fetchAuctionsFromSupabase(user?.id);
-            // Filter out won items - they should only appear in My Bids
-            // Note: Supabase query could handle this filter too
-            // Filter out won items and deduplicate by ID
-            const activeAuctions = data.filter(item => item.status !== 'won');
-
             // Deduplicate by ID just in case
-            const uniqueAuctions = Array.from(new Map(activeAuctions.map(item => [item.id, item])).values());
+            const uniqueAuctions = Array.from(new Map(data.map(item => [item.id, item])).values());
 
             setAuctions(uniqueAuctions);
             setFilteredAuctions(uniqueAuctions);

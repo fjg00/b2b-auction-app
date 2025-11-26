@@ -112,17 +112,21 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
             return;
         }
 
+        if (!lot.buyNowPrice) {
+            Alert.alert('Error', 'This item is not available for immediate purchase');
+            return;
+        }
+
         Alert.alert(
             "Buy Now",
-            `Are you sure you want to purchase this item for $${(lot.buyNowPrice || lot.currentBid).toLocaleString()}?`,
+            `Are you sure you want to purchase this item for $${lot.buyNowPrice.toLocaleString()}?`,
             [
                 { text: "Cancel", style: "cancel" },
                 {
                     text: "Confirm Purchase",
                     onPress: async () => {
                         setSubmitting(true);
-                        const amount = lot.buyNowPrice || lot.currentBid;
-                        const result = await createTransaction(lot.id, user.id, amount);
+                        const result = await createTransaction(lot.id, user.id, lot.buyNowPrice!);
                         setSubmitting(false);
 
                         if (result.success && result.transactionId) {
@@ -246,15 +250,19 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                                         <Text style={styles.bidButtonText}>{submitting ? 'Placing Bid...' : 'Place Bid'}</Text>
                                     </TouchableOpacity>
 
-                                    <View style={styles.divider} />
+                                    {lot.buyNowPrice && (
+                                        <>
+                                            <View style={styles.divider} />
 
-                                    <TouchableOpacity
-                                        style={[styles.buyNowButton, submitting && styles.disabledButton]}
-                                        onPress={handleBuyNow}
-                                        disabled={submitting}
-                                    >
-                                        <Text style={styles.buyNowText}>Buy Now for ${(lot.buyNowPrice || lot.currentBid).toLocaleString()}</Text>
-                                    </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[styles.buyNowButton, submitting && styles.disabledButton]}
+                                                onPress={handleBuyNow}
+                                                disabled={submitting}
+                                            >
+                                                <Text style={styles.buyNowText}>Buy Now for ${lot.buyNowPrice.toLocaleString()}</Text>
+                                            </TouchableOpacity>
+                                        </>
+                                    )}
                                 </>
                             ) : (
                                 <View style={styles.center}>
