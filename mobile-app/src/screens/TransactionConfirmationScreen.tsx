@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { CheckCircle, Clock, Truck, CreditCard, ChevronRight, AlertTriangle, MessageSquare, X, Upload, FileText } from 'lucide-react-native';
@@ -17,6 +17,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
 
     const [chatOpen, setChatOpen] = useState(false);
     const [proofOfPayment, setProofOfPayment] = useState<string | null>(null);
+    const [chatMessage, setChatMessage] = useState('');
 
     useEffect(() => {
         loadTransaction();
@@ -182,13 +183,6 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
 
             <TouchableOpacity style={styles.chatButton} onPress={() => setChatOpen(true)}>
                 <MessageSquare size={20} color={COLORS.primary} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-                style={styles.devToggle}
-                onPress={() => Alert.alert('Dev Info', `Role: ${role}\nStatus: ${transaction.status}`)}
-            >
-                <Text style={styles.devToggleText}>{role.toUpperCase()}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -632,11 +626,24 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     </ScrollView>
 
                     <View style={styles.chatInputContainer}>
+                        <TextInput
+                            style={styles.chatInput}
+                            placeholder="Type a message..."
+                            placeholderTextColor={COLORS.textMuted}
+                            value={chatMessage}
+                            onChangeText={setChatMessage}
+                            multiline
+                        />
                         <TouchableOpacity
-                            style={styles.inputButton}
-                            onPress={() => Alert.alert('Chat', 'Opening keyboard...')}
+                            style={styles.sendButton}
+                            onPress={() => {
+                                if (chatMessage.trim()) {
+                                    Alert.alert('Message Sent', chatMessage);
+                                    setChatMessage('');
+                                }
+                            }}
                         >
-                            <Text style={styles.inputText}>Type a message...</Text>
+                            <Text style={styles.sendButtonText}>Send</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -1067,16 +1074,31 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: COLORS.border,
         backgroundColor: COLORS.background,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: SPACING.sm,
     },
-    inputButton: {
+    chatInput: {
+        flex: 1,
         borderWidth: 1,
         borderColor: COLORS.border,
         borderRadius: RADIUS.md,
         padding: SPACING.md,
         backgroundColor: COLORS.surface,
+        color: COLORS.text,
+        maxHeight: 100,
     },
-    inputText: {
-        color: COLORS.textMuted,
+    sendButton: {
+        backgroundColor: COLORS.primary,
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
+        borderRadius: RADIUS.md,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    sendButtonText: {
+        color: 'white',
+        fontWeight: '600',
     },
     subDetailText: {
         fontSize: 12,
