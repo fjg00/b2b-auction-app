@@ -58,7 +58,14 @@ export const LotCard: React.FC<LotCardProps> = ({ lot, onPress }) => {
                 <View style={styles.metaRow}>
                     <MapPin size={14} color={COLORS.textMuted} />
                     <Text style={styles.metaText}>{lot.location}</Text>
+                    {lot.details?.deliveryMethod && (
+                        <>
+                            <Text style={styles.metaSeparator}>•</Text>
+                            <Text style={styles.metaText}>{lot.details.deliveryMethod}</Text>
+                        </>
+                    )}
                 </View>
+                <Text style={styles.sellerText}>Sold by: {lot.seller?.name}</Text>
 
                 <View style={styles.footer}>
                     <View>
@@ -133,6 +140,16 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: COLORS.textMuted,
         marginLeft: 4,
+    },
+    metaSeparator: {
+        fontSize: 14,
+        color: COLORS.textMuted,
+        marginHorizontal: 6,
+    },
+    sellerText: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+        marginBottom: SPACING.sm,
     },
     footer: {
         flexDirection: 'row',

@@ -1,21 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { createLot } from '../services/auctionService';
+import { getAddresses, Address } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { PRODUCT_CATEGORIES, CONDITION_CATEGORIES } from '@shared/constants';
-import { Package, DollarSign, Upload, Calendar, ChevronDown, X } from 'lucide-react-native';
+import { Package, DollarSign, Upload, Calendar, ChevronDown, X, MapPin, Truck } from 'lucide-react-native';
 
 export default function CreateLotScreen({ navigation }: any) {
     const { user } = useAuth();
     const [submitting, setSubmitting] = useState(false);
+    const [addresses, setAddresses] = useState<Address[]>([]);
     const [formData, setFormData] = useState({
         title: '',
         category: '',
         description: '',
         quantity: '',
         condition: '',
-        location: '',
+        warehouseId: '',
+        deliveryMethod: 'Pickup',
         startBid: '',
         buyNow: '',
         duration: '3 Days',
@@ -24,19 +27,19 @@ export default function CreateLotScreen({ navigation }: any) {
     // Picker State
     const [pickerVisible, setPickerVisible] = useState(false);
     const [pickerTitle, setPickerTitle] = useState('');
-    const [pickerData, setPickerData] = useState<string[]>([]);
+    const [pickerData, setPickerData] = useState<{ label: string; value: string }[]>([]);
     const [currentField, setCurrentField] = useState<string | null>(null);
 
-    const openPicker = (field: string, title: string, data: string[]) => {
+    const openPicker = (field: string, title: string, data: { label: string; value: string }[]) => {
         setCurrentField(field);
         setPickerTitle(title);
         setPickerData(data);
         setPickerVisible(true);
     };
 
-    const handleSelect = (item: string) => {
+    const handleSelect = (value: string) => {
         if (currentField) {
-            handleChange(currentField, item);
+            handleChange(currentField, value);
         }
         setPickerVisible(false);
     };
@@ -45,9 +48,20 @@ export default function CreateLotScreen({ navigation }: any) {
         setFormData(prev => ({ ...prev, [key]: value }));
     };
 
+    const loadAddresses = async () => {
+        if (user?.id) {
+            const data = await getAddresses(user.id);
+            setAddresses(data);
+        }
+    };
+
+    useEffect(() => {
+        loadAddresses();
+    }, [user]);
+
     const handleSubmit = async () => {
-        if (!formData.title || !formData.quantity || !formData.startBid) {
-            Alert.alert('Missing Fields', 'Please fill in all required fields.');
+        if (!formData.title || !formData.quantity || !formData.startBid || !formData.warehouseId) {
+            Alert.alert('Missing Fields', 'Please fill in all required fields, including warehouse location.');
             return;
         }
 
@@ -103,7 +117,7 @@ export default function CreateLotScreen({ navigation }: any) {
                     <Text style={styles.label}>Category</Text>
                     <TouchableOpacity
                         style={styles.pickerButton}
-                        onPress={() => openPicker('category', 'Select Category', PRODUCT_CATEGORIES)}
+                        onPress={() => openPicker('category', 'Select Category', PRODUCT_CATEGORIES.map(c => ({ label: c, value: c })))}
                     >
                         <Text style={[styles.pickerText, !formData.category && styles.placeholderText]}>
                             {formData.category || 'Select Category'}
@@ -137,7 +151,7 @@ export default function CreateLotScreen({ navigation }: any) {
                     <Text style={styles.label}>Condition</Text>
                     <TouchableOpacity
                         style={styles.pickerButton}
-                        onPress={() => openPicker('condition', 'Select Condition', CONDITION_CATEGORIES)}
+                        onPress={() => openPicker('condition', 'Select Condition', CONDITION_CATEGORIES.map(c => ({ label: c, value: c })))}
                     >
                         <Text style={[styles.pickerText, !formData.condition && styles.placeholderText]}>
                             {formData.condition || 'Select Condition'}
@@ -145,13 +159,45 @@ export default function CreateLotScreen({ navigation }: any) {
                         <ChevronDown size={20} color={COLORS.textMuted} />
                     </TouchableOpacity>
 
-                    <Text style={styles.label}>Location</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="City, State"
-                        value={formData.location}
-                        onChangeText={t => handleChange('location', t)}
-                    />
+                    <Text style={styles.label}>Warehouse Location *</Text>
+                    <TouchableOpacity
+                        style={styles.pickerButton}
+                        onPress={() => openPicker(
+                            'warehouseId',
+                            'Select Warehouse',
+                            addresses.map(a => ({ label: a.name, value: a.id || '' }))
+                        )}
+                    >
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <MapPin size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                            <Text style={[styles.pickerText, !formData.warehouseId && styles.placeholderText]}>
+                                {addresses.find(a => a.id === formData.warehouseId)?.name || 'Select Warehouse'}
+                            </Text>
+                        </View>
+                        <ChevronDown size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
+
+                    <Text style={styles.label}>Delivery Method *</Text>
+                    <TouchableOpacity
+                        style={styles.pickerButton}
+                        onPress={() => openPicker(
+                            'deliveryMethod',
+                            'Select Delivery Method',
+                            [
+                                { label: 'Pickup Only', value: 'Pickup' },
+                                { label: 'Delivery Only', value: 'Delivery' },
+                                { label: 'Negotiable', value: 'Negotiable' }
+                            ]
+                        )}
+                    >
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <Truck size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                            <Text style={[styles.pickerText, !formData.deliveryMethod && styles.placeholderText]}>
+                                {formData.deliveryMethod || 'Select Method'}
+                            </Text>
+                        </View>
+                        <ChevronDown size={20} color={COLORS.textMuted} />
+                    </TouchableOpacity>
                 </View>
 
                 {/* Pricing */}
@@ -221,19 +267,19 @@ export default function CreateLotScreen({ navigation }: any) {
                         </View>
                         <FlatList
                             data={pickerData}
-                            keyExtractor={item => item}
+                            keyExtractor={item => item.value}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     style={styles.modalItem}
-                                    onPress={() => handleSelect(item)}
+                                    onPress={() => handleSelect(item.value)}
                                 >
                                     <Text style={[
                                         styles.modalItemText,
-                                        formData[currentField as keyof typeof formData] === item && styles.selectedItemText
+                                        formData[currentField as keyof typeof formData] === item.value && styles.selectedItemText
                                     ]}>
-                                        {item}
+                                        {item.label}
                                     </Text>
-                                    {formData[currentField as keyof typeof formData] === item && (
+                                    {formData[currentField as keyof typeof formData] === item.value && (
                                         <View style={styles.selectedDot} />
                                     )}
                                 </TouchableOpacity>

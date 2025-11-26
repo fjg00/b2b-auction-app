@@ -169,6 +169,12 @@ export default function AddressesScreen({ navigation }: any) {
                                 </Text>
                                 <Text style={styles.addressCountry}>{address.country}</Text>
                                 <Text style={styles.addressPhone}>📞 {address.phone}</Text>
+                                {address.site_contact_name && (
+                                    <Text style={styles.addressPhone}>👤 {address.site_contact_name}</Text>
+                                )}
+                                {address.pickup_windows && (
+                                    <Text style={styles.addressPhone}>🕒 {address.pickup_windows}</Text>
+                                )}
 
                                 {address.notes && (
                                     <View style={styles.notesBox}>

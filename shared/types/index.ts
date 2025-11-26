@@ -24,6 +24,7 @@ export interface LotDetails {
     weight: string;
     packaging: string;
     storage: string;
+    deliveryMethod?: string;
 }
 
 export interface Lot {

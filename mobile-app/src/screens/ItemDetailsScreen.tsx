@@ -117,7 +117,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                     <View style={styles.metaGrid}>
                         <View style={styles.metaItem}>
                             <Text style={styles.metaLabel}>Seller</Text>
-                            <TouchableOpacity onPress={() => navigation.push('SellerProfile', { id: '1' })}>
+                            <TouchableOpacity onPress={() => lot.seller_id && navigation.push('SellerProfile', { id: lot.seller_id })}>
                                 <Text style={[styles.metaValue, { color: COLORS.primary, textDecorationLine: 'underline' }]}>{lot.seller?.name}</Text>
                             </TouchableOpacity>
                         </View>
@@ -133,6 +133,12 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                             <Text style={styles.metaLabel}>Quantity</Text>
                             <Text style={styles.metaValue}>{lot.details?.quantity}</Text>
                         </View>
+                        {lot.details?.deliveryMethod && (
+                            <View style={styles.metaItem}>
+                                <Text style={styles.metaLabel}>Delivery Method</Text>
+                                <Text style={styles.metaValue}>{lot.details.deliveryMethod}</Text>
+                            </View>
+                        )}
                     </View>
 
                     <View style={styles.section}>

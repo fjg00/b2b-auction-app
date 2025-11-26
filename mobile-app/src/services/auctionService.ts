@@ -7,7 +7,7 @@ export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
     try {
         const { data: lots, error } = await supabase
             .from('lots')
-            .select('*')
+            .select('*, seller:users!seller_id(full_name, city), warehouse:addresses!warehouse_id(city)')
             .eq('status', 'ACTIVE')
             .order('created_at', { ascending: false });
 
@@ -36,7 +36,7 @@ export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
             title: lot.title,
             image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
             images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
-            location: 'Beirut, Lebanon',
+            location: lot.warehouse?.city || lot.seller?.city || 'Beirut, Lebanon',
             expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             condition: 'Overstock',
             currentBid: maxBidsMap.get(lot.id) || lot.start_price,
@@ -48,9 +48,9 @@ export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
             watchCount: 0,
             description: lot.description,
             seller: {
-                name: 'Unknown Seller',
+                name: lot.seller?.full_name || 'Unknown Seller',
                 rating: 5.0,
-                location: 'Beirut, Lebanon',
+                location: lot.seller?.city || 'Beirut, Lebanon',
             },
             seller_id: lot.seller_id,
             details: {
@@ -58,6 +58,7 @@ export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
                 weight: 'N/A',
                 packaging: 'Box',
                 storage: 'Ambient',
+                deliveryMethod: lot.delivery_method,
             },
             bids: []
         }));
@@ -173,7 +174,7 @@ export const fetchLotById = async (id: string): Promise<Lot | undefined> => {
         // Fetch lot details
         const { data: lot, error } = await supabase
             .from('lots')
-            .select('*')
+            .select('*, seller:users!seller_id(full_name, city), warehouse:addresses!warehouse_id(city)')
             .eq('id', id)
             .single();
 
@@ -208,7 +209,7 @@ export const fetchLotById = async (id: string): Promise<Lot | undefined> => {
             title: lot.title,
             image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
             images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
-            location: 'Beirut, Lebanon',
+            location: lot.warehouse?.city || lot.seller?.city || 'Beirut, Lebanon',
             expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             condition: 'Overstock',
             currentBid: maxBid,
@@ -219,9 +220,19 @@ export const fetchLotById = async (id: string): Promise<Lot | undefined> => {
             bidsCount: bids?.length || 0,
             watchCount: 0,
             description: lot.description,
-            seller: { name: 'Unknown Seller', rating: 5, location: 'Beirut' },
-            seller_id: lot.seller_id, // Add seller_id for ownership checks
-            details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
+            seller: {
+                name: lot.seller?.full_name || 'Unknown Seller',
+                rating: 5.0,
+                location: lot.seller?.city || 'Beirut, Lebanon',
+            },
+            seller_id: lot.seller_id,
+            details: {
+                quantity: '1 Unit',
+                weight: 'N/A',
+                packaging: 'Box',
+                storage: 'Ambient',
+                deliveryMethod: lot.delivery_method,
+            },
             bids: formattedBids
         };
     } catch (error) {
@@ -286,6 +297,8 @@ export const createLot = async (formData: any, userId: string): Promise<{ succes
                     status: 'ACTIVE',
                     start_time: new Date().toISOString(),
                     end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
+                    warehouse_id: formData.warehouseId,
+                    delivery_method: formData.deliveryMethod,
                 }
             ]);
 
