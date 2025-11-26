@@ -32,6 +32,12 @@ export function SellerLotCard({ lot, onPress }: SellerLotCardProps) {
                             <Text style={[styles.statusBadgeText, { color: '#059669' }]}>AWAITING PICKUP</Text>
                         </View>
                     );
+                case 'handed_over':
+                    return (
+                        <View style={[styles.statusBadge, { backgroundColor: '#E5E7EB' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#6B7280' }]}>COMPLETED</Text>
+                        </View>
+                    );
                 default:
                     return (
                         <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>

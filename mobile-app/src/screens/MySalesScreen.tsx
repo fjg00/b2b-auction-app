@@ -14,7 +14,7 @@ export default function MySalesScreen({ navigation }: any) {
     const [sales, setSales] = useState<Lot[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [activeTab, setActiveTab] = useState<'active' | 'sold'>('active');
+    const [activeTab, setActiveTab] = useState<'active' | 'sold' | 'completed'>('active');
 
     useFocusEffect(
         useCallback(() => {
@@ -59,7 +59,8 @@ export default function MySalesScreen({ navigation }: any) {
 
     const filteredSales = sales.filter(item => {
         if (activeTab === 'active') return item.status === 'active';
-        return item.status === 'won';
+        if (activeTab === 'sold') return item.status === 'won' && item.transactionStatus !== 'handed_over';
+        return item.status === 'won' && item.transactionStatus === 'handed_over';
     });
 
     if (loading) {
@@ -93,17 +94,25 @@ export default function MySalesScreen({ navigation }: any) {
                 >
                     <Text style={[styles.tabText, activeTab === 'sold' && styles.activeTabText]}>Sold Items</Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.tab, activeTab === 'completed' && styles.activeTab]}
+                    onPress={() => setActiveTab('completed')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'completed' && styles.activeTabText]}>Completed</Text>
+                </TouchableOpacity>
             </View>
 
             {filteredSales.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyTitle}>
-                        {activeTab === 'active' ? 'No active listings' : 'No sold items yet'}
+                        {activeTab === 'active' ? 'No active listings' : activeTab === 'sold' ? 'No sold items yet' : 'No completed sales'}
                     </Text>
                     <Text style={styles.emptyText}>
                         {activeTab === 'active'
                             ? 'Start selling by listing your first item'
-                            : 'Items you sell will appear here'}
+                            : activeTab === 'sold'
+                                ? 'Items you sell will appear here'
+                                : 'Completed transactions will appear here'}
                     </Text>
                     {activeTab === 'active' && (
                         <TouchableOpacity style={styles.emptyButton} onPress={handleCreateLot}>

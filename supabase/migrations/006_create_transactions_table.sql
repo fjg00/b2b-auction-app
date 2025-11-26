@@ -1,5 +1,5 @@
 -- Create transactions table
-CREATE TYPE transaction_status AS ENUM ('pending_payment', 'payment_sent', 'completed', 'cancelled');
+CREATE TYPE transaction_status AS ENUM ('pending_payment', 'payment_sent', 'completed', 'handed_over', 'cancelled');
 
 CREATE TABLE IF NOT EXISTS transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

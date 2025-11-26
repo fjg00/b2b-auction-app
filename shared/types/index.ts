@@ -47,7 +47,7 @@ export interface Lot {
     details?: LotDetails;
     bids?: Bid[];
     status?: AuctionStatus; // Derived or explicit
-    transactionStatus?: 'pending_payment' | 'payment_sent' | 'completed' | 'cancelled';
+    transactionStatus?: 'pending_payment' | 'payment_sent' | 'completed' | 'handed_over' | 'cancelled';
 }
 
 export interface Review {
@@ -74,7 +74,7 @@ export interface SellerProfile extends Seller {
     pickupLocations: { address: string; notes: string }[];
 }
 
-export type TransactionStatus = 'pending_payment' | 'payment_sent' | 'completed' | 'cancelled';
+export type TransactionStatus = 'pending_payment' | 'payment_sent' | 'completed' | 'handed_over' | 'cancelled';
 
 export interface Transaction {
     id: string;

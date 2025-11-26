@@ -41,6 +41,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
     // Derive step from status
     const getStep = () => {
         if (!transaction) return 'payment';
+        if (transaction.status === 'handed_over') return 'complete';
         if (transaction.status === 'completed') return 'logistics';
         if (transaction.status === 'payment_sent') return 'receipt';
         return 'payment';
@@ -117,6 +118,39 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         if (result.success) {
                             loadTransaction();
                             Alert.alert("Success", "Transaction completed! Logistics unlocked.");
+                        } else {
+                            Alert.alert("Error", result.message);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
+    const handleConfirmHandover = () => {
+        if (!transaction) return;
+
+        // Enforce that payment must be completed first
+        if (transaction.status !== 'completed') {
+            Alert.alert("Wait", "Payment must be confirmed before releasing goods.");
+            return;
+        }
+
+        Alert.alert(
+            "Confirm Handover",
+            "Have the goods been picked up or delivered to the buyer?",
+            [
+                { text: "No", style: "cancel" },
+                {
+                    text: "Yes, Goods Released",
+                    onPress: async () => {
+                        setUploading(true);
+                        const result = await updateTransactionStatus(transaction.id, 'handed_over');
+                        setUploading(false);
+
+                        if (result.success) {
+                            loadTransaction();
+                            Alert.alert("Success", "Transaction completed! The item has been marked as delivered.");
                         } else {
                             Alert.alert("Error", result.message);
                         }
@@ -512,6 +546,55 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 <Text style={styles.releaseCodeValue}>{transaction.releaseCode || `REL-${transaction.id.slice(0, 8).toUpperCase()}`}</Text>
                 <Text style={styles.releaseCodeHint}>Present this code to claim goods</Text>
             </View>
+
+            {role === 'seller' && (
+                <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmHandover}>
+                    <Text style={styles.primaryButtonText}>Confirm Goods Released</Text>
+                </TouchableOpacity>
+            )}
+
+            {role === 'buyer' && (
+                <View style={styles.waitingBox}>
+                    <Clock size={20} color={COLORS.textMuted} />
+                    <Text style={styles.waitingText}>Waiting for seller to confirm handover...</Text>
+                </View>
+            )}
+        </View>
+    );
+
+    const renderCompleteStep = () => (
+        <View style={styles.card}>
+            <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Transaction Complete</Text>
+                <View style={[styles.statusBadge, { backgroundColor: '#E5E7EB' }]}>
+                    <Text style={[styles.statusText, { color: '#6B7280' }]}>COMPLETED</Text>
+                </View>
+            </View>
+
+            <View style={styles.successBox}>
+                <CheckCircle size={48} color="#059669" />
+                <Text style={[styles.successText, { fontSize: 22, marginTop: 12 }]}>All Done!</Text>
+            </View>
+
+            <Text style={styles.instructionText}>
+                This transaction has been successfully completed. The goods have been handed over and the transaction is now closed.
+            </Text>
+
+            <View style={styles.infoBox}>
+                <Text style={styles.infoLabel}>Transaction ID</Text>
+                <Text style={styles.infoValue}>{transaction.id.slice(0, 8)}</Text>
+                <Text style={styles.infoLabel}>Completed On</Text>
+                <Text style={styles.infoValue}>{new Date(transaction.updatedAt).toLocaleDateString()}</Text>
+                <Text style={styles.infoLabel}>Final Amount</Text>
+                <Text style={styles.infoValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+            </View>
+
+            <TouchableOpacity
+                style={[styles.primaryButton, { backgroundColor: COLORS.border }]}
+                onPress={() => navigation.goBack()}
+            >
+                <Text style={[styles.primaryButtonText, { color: COLORS.text }]}>Back to {role === 'seller' ? 'Sales' : 'Purchases'}</Text>
+            </TouchableOpacity>
         </View>
     );
 
@@ -571,6 +654,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     {step === 'payment' && renderPaymentStep()}
                     {step === 'receipt' && renderReceiptStep()}
                     {step === 'logistics' && renderLogisticsStep()}
+                    {step === 'complete' && renderCompleteStep()}
                 </View>
             </ScrollView>
             {renderChatBottomSheet()}
