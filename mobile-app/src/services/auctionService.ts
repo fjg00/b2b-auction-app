@@ -80,7 +80,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
         // Fetch bids for this user, and join the related lot data
         const { data: bids, error } = await supabase
             .from('bids')
-            .select('*, lot:lots(*)')
+            .select('*, lot:lots(*, seller:users!seller_id(full_name, company_name))')
             .eq('bidder_id', userId)
             .order('created_at', { ascending: false });
 
@@ -121,7 +121,11 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
                 bidsCount: 0,
                 watchCount: 0,
                 description: lot.description,
-                seller: { name: 'Unknown', rating: 5, location: 'Beirut' },
+                seller: {
+                    name: lot.seller?.company_name || lot.seller?.full_name || 'Unknown',
+                    rating: 5,
+                    location: 'Beirut'
+                },
                 seller_id: lot.seller_id,
                 details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
                 bids: []
