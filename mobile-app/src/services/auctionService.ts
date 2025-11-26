@@ -169,17 +169,22 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
         // Fetch transactions to verify sold status and get transaction status
         const { data: transactions } = await supabase
             .from('transactions')
-            .select('lot_id, status')
+            .select('lot_id, status, updated_at, buyer:users!buyer_id(full_name)')
             .in('lot_id', lotIds);
 
-        const transactionsMap = new Map<string, string>();
+        const transactionsMap = new Map<string, { status: string, buyerName?: string, date?: string }>();
         transactions?.forEach((t: any) => {
-            transactionsMap.set(t.lot_id, t.status);
+            transactionsMap.set(t.lot_id, {
+                status: t.status,
+                buyerName: t.buyer?.full_name,
+                date: t.updated_at
+            });
         });
 
         return lots.map((lot: any) => {
             const bidInfo = bidsMap.get(lot.id) || { maxBid: 0, count: 0 };
-            const transactionStatus = transactionsMap.get(lot.id);
+            const txInfo = transactionsMap.get(lot.id);
+            const transactionStatus = txInfo?.status;
             const isSold = !!transactionStatus || lot.status === 'won' || lot.status === 'WON';
 
             return {
@@ -196,6 +201,8 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 endTime: new Date(lot.end_time),
                 status: isSold ? 'won' : lot.status.toLowerCase(),
                 transactionStatus: transactionStatus as any,
+                buyerName: txInfo?.buyerName,
+                soldDate: txInfo?.date,
                 bidsCount: bidInfo.count,
                 watchCount: 0,
                 description: lot.description,

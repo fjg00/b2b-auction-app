@@ -48,6 +48,8 @@ export interface Lot {
     bids?: Bid[];
     status?: AuctionStatus; // Derived or explicit
     transactionStatus?: 'pending_payment' | 'payment_sent' | 'completed' | 'handed_over' | 'cancelled';
+    buyerName?: string;
+    soldDate?: string;
 }
 
 export interface Review {

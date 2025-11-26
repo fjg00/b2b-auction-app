@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, Act
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { CheckCircle, Clock, Truck, CreditCard, ChevronRight, AlertTriangle, MessageSquare, X, Upload, FileText } from 'lucide-react-native';
-
+import { pickDocument, uploadFile } from '../services/storageService';
 import { getTransaction, updateTransactionStatus } from '../services/auctionService';
 import { Transaction } from '@shared/types';
 import { useAuth } from '../context/AuthContext';
@@ -51,18 +51,20 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
     const step = getStep();
     const role = user?.id === transaction?.sellerId ? 'seller' : 'buyer';
 
-    const handleUploadProof = () => {
-        Alert.alert(
-            "Upload Proof",
-            "Select a file to upload",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Select Image/PDF",
-                    onPress: () => setProofOfPayment("payment_receipt_123.pdf") // Mock file selection
-                }
-            ]
-        );
+    const handleUploadProof = async () => {
+        const file = await pickDocument();
+        if (!file) return;
+
+        setUploading(true);
+        const publicUrl = await uploadFile(file, 'transaction-proofs', `proof_${transactionId}_${Date.now()}`);
+        setUploading(false);
+
+        if (publicUrl) {
+            setProofOfPayment(publicUrl);
+            Alert.alert('Success', 'Proof of payment uploaded successfully!');
+        } else {
+            Alert.alert('Error', 'Failed to upload proof of payment.');
+        }
     };
 
     const handleConfirmPayment = async () => {
@@ -297,22 +299,27 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                         </View>
                     </View>
 
-                    {/* Proof of Payment Upload */}
                     <View style={styles.uploadSection}>
-                        <Text style={styles.sectionHeader}>Proof of Payment</Text>
-
                         {proofOfPayment ? (
                             <View style={styles.filePreview}>
                                 <FileText size={24} color={COLORS.primary} />
-                                <Text style={styles.fileName}>{proofOfPayment}</Text>
+                                <Text style={styles.fileName} numberOfLines={1}>
+                                    {proofOfPayment.split('/').pop()}
+                                </Text>
                                 <TouchableOpacity onPress={() => setProofOfPayment(null)}>
                                     <X size={20} color={COLORS.textMuted} />
                                 </TouchableOpacity>
                             </View>
                         ) : (
-                            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadProof}>
-                                <Upload size={20} color={COLORS.primary} />
-                                <Text style={styles.uploadButtonText}>Upload Receipt (PDF or Image)</Text>
+                            <TouchableOpacity style={styles.uploadButton} onPress={handleUploadProof} disabled={uploading}>
+                                {uploading ? (
+                                    <ActivityIndicator color={COLORS.primary} />
+                                ) : (
+                                    <>
+                                        <Upload size={24} color={COLORS.textMuted} />
+                                        <Text style={styles.uploadButtonText}>Upload Proof of Payment</Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
                         )}
                     </View>
@@ -404,7 +411,6 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             )}
         </View>
     );
-
     const renderReceiptStep = () => (
         <View style={styles.card}>
             <View style={styles.cardHeader}>

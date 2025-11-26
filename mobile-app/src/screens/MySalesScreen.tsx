@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { SellerLotCard } from '../components/SellerLotCard';
+import { CompletedTransactionCard } from '../components/CompletedTransactionCard';
 import { fetchMySales } from '../services/auctionService';
 import { Lot } from '@shared/types';
 import { PlusCircle } from 'lucide-react-native';
@@ -44,7 +45,11 @@ export default function MySalesScreen({ navigation }: any) {
             const transaction = await getTransactionByLotId(item.id, user!.id);
 
             if (transaction?.id) {
-                navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
+                if (transaction.status === 'handed_over') {
+                    navigation.navigate('Invoice', { transactionId: transaction.id });
+                } else {
+                    navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
+                }
             } else {
                 Alert.alert('Error', 'Transaction not found for this item');
             }
@@ -125,9 +130,23 @@ export default function MySalesScreen({ navigation }: any) {
                 <FlatList
                     data={filteredSales}
                     keyExtractor={item => item.id}
-                    renderItem={({ item }) => (
-                        <SellerLotCard lot={item} onPress={() => handlePress(item)} />
-                    )}
+                    renderItem={({ item }) => {
+                        if (activeTab === 'completed') {
+                            return (
+                                <CompletedTransactionCard
+                                    title={item.title}
+                                    amount={item.currentBid} // Assuming currentBid is the final price for now, or fetch from transaction if available
+                                    currency="USD" // Default or fetch
+                                    date={item.soldDate || new Date().toISOString()}
+                                    otherPartyName={item.buyerName || 'Buyer'}
+                                    transactionId={item.id} // Using lot ID as proxy if tx ID not readily available in list
+                                    role="seller"
+                                    onPress={() => handlePress(item)}
+                                />
+                            );
+                        }
+                        return <SellerLotCard lot={item} onPress={() => handlePress(item)} />;
+                    }}
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
                 />

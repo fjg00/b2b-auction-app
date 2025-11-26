@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { Upload, CheckCircle, Building2, User, FileText, Shield } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
-import { getBusinessVerification, updateBusinessVerification, uploadBusinessDocument, AccountType, LegalForm } from '../services/profileService';
+import { getBusinessVerification, updateBusinessVerification, AccountType, LegalForm } from '../services/profileService';
+import { pickDocument, uploadFile } from '../services/storageService';
 
 export default function VerificationScreen({ navigation }: any) {
     const { user } = useAuth();
@@ -34,6 +35,7 @@ export default function VerificationScreen({ navigation }: any) {
     const [commercialRegisterDoc, setCommercialRegisterDoc] = useState<string | null>(null);
     const [mofCertificate, setMofCertificate] = useState<string | null>(null);
     const [vatCertificate, setVatCertificate] = useState<string | null>(null);
+    const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
 
     useEffect(() => {
         loadVerificationData();
@@ -80,10 +82,41 @@ export default function VerificationScreen({ navigation }: any) {
         }
     };
 
-    const handleDocumentUpload = (docType: 'national_id' | 'commercial_register' | 'mof_certificate' | 'vat_certificate') => {
-        // TODO: Implement document picker
-        // For now, just show alert
-        Alert.alert('Upload', `Upload ${docType} document - Document picker to be implemented`);
+    const handleDocumentUpload = async (docType: 'national_id' | 'commercial_register' | 'mof_certificate' | 'vat_certificate') => {
+        const file = await pickDocument();
+        if (!file) return;
+
+        setUploadingDoc(docType);
+        try {
+            // Create a unique path: verification/{userId}/{docType}_{timestamp}
+            const path = `verification/${user?.id}/${docType}_${Date.now()}`;
+            const publicUrl = await uploadFile(file, 'verification-documents', path);
+
+            if (publicUrl) {
+                switch (docType) {
+                    case 'national_id':
+                        setNationalIdDocument(publicUrl);
+                        break;
+                    case 'commercial_register':
+                        setCommercialRegisterDoc(publicUrl);
+                        break;
+                    case 'mof_certificate':
+                        setMofCertificate(publicUrl);
+                        break;
+                    case 'vat_certificate':
+                        setVatCertificate(publicUrl);
+                        break;
+                }
+                Alert.alert('Success', 'Document uploaded successfully');
+            } else {
+                Alert.alert('Error', 'Failed to upload document');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            Alert.alert('Error', 'An error occurred during upload');
+        } finally {
+            setUploadingDoc(null);
+        }
     };
 
     const validateForm = () => {
@@ -275,11 +308,18 @@ export default function VerificationScreen({ navigation }: any) {
                             <TouchableOpacity
                                 style={styles.uploadButton}
                                 onPress={() => handleDocumentUpload('national_id')}
+                                disabled={uploadingDoc === 'national_id'}
                             >
-                                <Upload size={20} color={COLORS.primary} />
-                                <Text style={styles.uploadButtonText}>
-                                    {nationalIdDocument ? 'Change Document' : 'Upload National ID'}
-                                </Text>
+                                {uploadingDoc === 'national_id' ? (
+                                    <ActivityIndicator size="small" color={COLORS.primary} />
+                                ) : (
+                                    <>
+                                        <Upload size={20} color={COLORS.primary} />
+                                        <Text style={styles.uploadButtonText}>
+                                            {nationalIdDocument ? 'Change Document' : 'Upload National ID'}
+                                        </Text>
+                                    </>
+                                )}
                             </TouchableOpacity>
                             {nationalIdDocument && (
                                 <View style={styles.uploadedBadge}>
@@ -409,11 +449,18 @@ export default function VerificationScreen({ navigation }: any) {
                                 <TouchableOpacity
                                     style={styles.uploadButton}
                                     onPress={() => handleDocumentUpload('commercial_register')}
+                                    disabled={uploadingDoc === 'commercial_register'}
                                 >
-                                    <Upload size={20} color={COLORS.primary} />
-                                    <Text style={styles.uploadButtonText}>
-                                        {commercialRegisterDoc ? 'Change Document' : 'Upload CR Extract'}
-                                    </Text>
+                                    {uploadingDoc === 'commercial_register' ? (
+                                        <ActivityIndicator size="small" color={COLORS.primary} />
+                                    ) : (
+                                        <>
+                                            <Upload size={20} color={COLORS.primary} />
+                                            <Text style={styles.uploadButtonText}>
+                                                {commercialRegisterDoc ? 'Change Document' : 'Upload CR Extract'}
+                                            </Text>
+                                        </>
+                                    )}
                                 </TouchableOpacity>
                                 {commercialRegisterDoc && (
                                     <View style={styles.uploadedBadge}>
@@ -428,11 +475,18 @@ export default function VerificationScreen({ navigation }: any) {
                                 <TouchableOpacity
                                     style={styles.uploadButton}
                                     onPress={() => handleDocumentUpload('mof_certificate')}
+                                    disabled={uploadingDoc === 'mof_certificate'}
                                 >
-                                    <Upload size={20} color={COLORS.primary} />
-                                    <Text style={styles.uploadButtonText}>
-                                        {mofCertificate ? 'Change Document' : 'Upload MoF Certificate'}
-                                    </Text>
+                                    {uploadingDoc === 'mof_certificate' ? (
+                                        <ActivityIndicator size="small" color={COLORS.primary} />
+                                    ) : (
+                                        <>
+                                            <Upload size={20} color={COLORS.primary} />
+                                            <Text style={styles.uploadButtonText}>
+                                                {mofCertificate ? 'Change Document' : 'Upload MoF Certificate'}
+                                            </Text>
+                                        </>
+                                    )}
                                 </TouchableOpacity>
                                 {mofCertificate && (
                                     <View style={styles.uploadedBadge}>
@@ -448,11 +502,18 @@ export default function VerificationScreen({ navigation }: any) {
                                     <TouchableOpacity
                                         style={styles.uploadButton}
                                         onPress={() => handleDocumentUpload('vat_certificate')}
+                                        disabled={uploadingDoc === 'vat_certificate'}
                                     >
-                                        <Upload size={20} color={COLORS.primary} />
-                                        <Text style={styles.uploadButtonText}>
-                                            {vatCertificate ? 'Change Document' : 'Upload VAT Certificate'}
-                                        </Text>
+                                        {uploadingDoc === 'vat_certificate' ? (
+                                            <ActivityIndicator size="small" color={COLORS.primary} />
+                                        ) : (
+                                            <>
+                                                <Upload size={20} color={COLORS.primary} />
+                                                <Text style={styles.uploadButtonText}>
+                                                    {vatCertificate ? 'Change Document' : 'Upload VAT Certificate'}
+                                                </Text>
+                                            </>
+                                        )}
                                     </TouchableOpacity>
                                     {vatCertificate && (
                                         <View style={styles.uploadedBadge}>

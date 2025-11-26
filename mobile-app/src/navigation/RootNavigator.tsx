@@ -74,6 +74,7 @@ import AddressesScreen from '../screens/AddressesScreen';
 import TransactionConfirmationScreen from '../screens/TransactionConfirmationScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import InvoiceScreen from '../screens/InvoiceScreen';
 import { supabase } from '../lib/supabase';
 import { useEffect } from 'react';
 
@@ -194,6 +195,13 @@ export default function RootNavigator() {
                             component={TransactionConfirmationScreen}
                             options={{
                                 headerShown: false, // Custom header in screen
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Invoice"
+                            component={InvoiceScreen}
+                            options={{
+                                headerShown: false,
                             }}
                         />
                         <Stack.Screen
