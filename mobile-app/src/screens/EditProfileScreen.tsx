@@ -149,7 +149,6 @@ export default function EditProfileScreen({ navigation }: any) {
 
     const handleImagePick = () => {
         // TODO: Implement image picker
-        console.log('Pick image');
     };
 
     if (loading) {

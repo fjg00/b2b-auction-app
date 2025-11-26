@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, ActivityIndicator, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { fetchLotById, placeBid, createTransaction } from '../services/auctionService';
+import { fetchLotById, placeBid, createTransaction, getTransactionByLotId } from '../services/auctionService';
 import { Lot } from '@shared/types';
 import { Clock, MapPin, Package, Truck, AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +20,6 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
     useEffect(() => {
         const checkTransaction = async () => {
             if (user && lot) {
-                const { getTransactionByLotId } = require('../services/auctionService');
                 const tx = await getTransactionByLotId(lot.id, user.id);
                 if (tx) {
                     setExistingTransactionId(tx.id);

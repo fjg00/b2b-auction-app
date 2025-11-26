@@ -84,13 +84,6 @@ export default function VerificationScreen({ navigation }: any) {
         // TODO: Implement document picker
         // For now, just show alert
         Alert.alert('Upload', `Upload ${docType} document - Document picker to be implemented`);
-
-        // Example of how to use the upload function:
-        // const result = await DocumentPicker.getDocumentAsync({});
-        // if (result.type === 'success') {
-        //     const url = await uploadBusinessDocument(user.id, docType, result.file, result.name);
-        //     // Update state based on docType
-        // }
     };
 
     const validateForm = () => {
