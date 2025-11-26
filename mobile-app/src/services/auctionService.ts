@@ -443,3 +443,97 @@ export const updateTransactionStatus = async (id: string, status: string, proofU
         return { success: false, message: 'An unexpected error occurred.' };
     }
 };
+
+export const fetchMyTransactions = async (userId: string): Promise<Transaction[]> => {
+    try {
+        const { data: transactions, error } = await supabase
+            .from('transactions')
+            .select(`
+                *,
+                lot:lots(*),
+                buyer:users!buyer_id(full_name, email),
+                seller:users!seller_id(full_name, email)
+            `)
+            .eq('buyer_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching my transactions:', error);
+            return [];
+        }
+
+        if (!transactions) return [];
+
+        // Deduplicate by lot_id, keeping the most recent one
+        const uniqueTransactionsMap = new Map();
+        transactions.forEach((tx: any) => {
+            if (!uniqueTransactionsMap.has(tx.lot_id)) {
+                uniqueTransactionsMap.set(tx.lot_id, tx);
+            }
+        });
+
+        const uniqueTransactions = Array.from(uniqueTransactionsMap.values());
+
+        return uniqueTransactions.map((tx: any) => ({
+            id: tx.id,
+            lotId: tx.lot_id,
+            buyerId: tx.buyer_id,
+            sellerId: tx.seller_id,
+            amount: tx.amount,
+            currency: tx.currency,
+            status: tx.status,
+            proofOfPaymentUrl: tx.proof_of_payment_url,
+            createdAt: tx.created_at,
+            updatedAt: tx.updated_at,
+            lot: {
+                id: tx.lot.id,
+                title: tx.lot.title,
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                location: 'Beirut',
+                expiryDate: tx.lot.end_time,
+                condition: 'Overstock',
+                currentBid: tx.amount,
+                endTime: new Date(tx.lot.end_time),
+                status: 'won',
+                seller_id: tx.seller_id
+            },
+            buyer: {
+                name: tx.buyer?.full_name || 'Unknown Buyer',
+                email: tx.buyer?.email || ''
+            },
+            seller: {
+                name: tx.seller?.full_name || 'Unknown Seller',
+                email: tx.seller?.email || ''
+            }
+        }));
+    } catch (error) {
+        console.error('Unexpected error fetching my transactions:', error);
+        return [];
+    }
+};
+
+export const getTransactionByLotId = async (lotId: string, userId: string): Promise<Transaction | undefined> => {
+    try {
+        const { data: tx, error } = await supabase
+            .from('transactions')
+            .select('id')
+            .eq('lot_id', lotId)
+            .eq('buyer_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Error checking transaction existence:', error);
+            return undefined;
+        }
+
+        if (!tx) return undefined;
+
+        // If found, fetch full details using existing function
+        return getTransaction(tx.id);
+    } catch (error) {
+        console.error('Unexpected error checking transaction existence:', error);
+        return undefined;
+    }
+};

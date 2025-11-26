@@ -374,12 +374,16 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             </View>
 
             <Text style={styles.instructionText}>
-                The buyer has marked this transaction as paid. Please check your bank account.
+                {role === 'seller'
+                    ? "The buyer has marked this transaction as paid. Please check your bank account."
+                    : "You have marked this transaction as paid. Waiting for the seller to confirm receipt."}
             </Text>
 
-            <Text style={styles.warningText}>
-                Note: Bank transfers may take 1-3 business days to appear in your account.
-            </Text>
+            {role === 'seller' && (
+                <Text style={styles.warningText}>
+                    Note: Bank transfers may take 1-3 business days to appear in your account.
+                </Text>
+            )}
 
             <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Buyer</Text>

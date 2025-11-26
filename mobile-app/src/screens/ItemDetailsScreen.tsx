@@ -128,6 +128,20 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
 
     // Check if current user is the seller
     const isOwner = user && lot.seller_id === user.id;
+    const [existingTransactionId, setExistingTransactionId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const checkTransaction = async () => {
+            if (user && lot) {
+                const { getTransactionByLotId } = require('../services/auctionService');
+                const tx = await getTransactionByLotId(lot.id, user.id);
+                if (tx) {
+                    setExistingTransactionId(tx.id);
+                }
+            }
+        };
+        checkTransaction();
+    }, [user, lot]);
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
@@ -205,32 +219,22 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
 
                             <View style={styles.divider} />
 
-                            <TouchableOpacity
-                                style={[styles.buyNowButton, submitting && styles.disabledButton]}
-                                onPress={handleBuyNow}
-                                disabled={submitting}
-                            >
-                                <Text style={styles.buyNowText}>Buy Now for ${(lot.buyNowPrice || lot.currentBid).toLocaleString()}</Text>
-                            </TouchableOpacity>
-                        </View>
-                    )}
-
-                    {isOwner && (
-                        <View style={styles.sellerInfoBox}>
-                            <Text style={styles.sellerInfoTitle}>Your Listing</Text>
-                            <Text style={styles.sellerInfoText}>
-                                This is your item. You cannot bid on your own listings.
-                            </Text>
-                            <View style={styles.sellerStats}>
-                                <View style={styles.sellerStatItem}>
-                                    <Text style={styles.sellerStatLabel}>Current Bid</Text>
-                                    <Text style={styles.sellerStatValue}>${lot.currentBid.toLocaleString()}</Text>
-                                </View>
-                                <View style={styles.sellerStatItem}>
-                                    <Text style={styles.sellerStatLabel}>Total Bids</Text>
-                                    <Text style={styles.sellerStatValue}>{lot.bidsCount}</Text>
-                                </View>
-                            </View>
+                            {existingTransactionId ? (
+                                <TouchableOpacity
+                                    style={[styles.buyNowButton, { backgroundColor: COLORS.success }]}
+                                    onPress={() => navigation.navigate('TransactionConfirmation', { transactionId: existingTransactionId })}
+                                >
+                                    <Text style={styles.buyNowText}>View Transaction</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={[styles.buyNowButton, submitting && styles.disabledButton]}
+                                    onPress={handleBuyNow}
+                                    disabled={submitting}
+                                >
+                                    <Text style={styles.buyNowText}>Buy Now for ${(lot.buyNowPrice || lot.currentBid).toLocaleString()}</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     )}
 
@@ -246,7 +250,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                     </View>
                 </View>
             </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAvoidingView >
     );
 }
 
