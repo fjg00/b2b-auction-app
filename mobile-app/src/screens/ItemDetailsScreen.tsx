@@ -185,6 +185,22 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                         )}
                     </View>
 
+                    {isOwner && (
+                        <View style={styles.sellerInfoBox}>
+                            <Text style={styles.sellerInfoTitle}>Your Listing Performance</Text>
+                            <View style={styles.sellerStats}>
+                                <View style={styles.sellerStatItem}>
+                                    <Text style={styles.sellerStatLabel}>Current Bid</Text>
+                                    <Text style={styles.sellerStatValue}>${lot.currentBid.toLocaleString()}</Text>
+                                </View>
+                                <View style={styles.sellerStatItem}>
+                                    <Text style={styles.sellerStatLabel}>Total Bids</Text>
+                                    <Text style={styles.sellerStatValue}>{lot.bidsCount}</Text>
+                                </View>
+                            </View>
+                        </View>
+                    )}
+
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Description</Text>
                         <Text style={styles.description}>{lot.description}</Text>
@@ -192,48 +208,61 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
 
                     {!isOwner && (
                         <View style={styles.bidSection}>
-                            <Text style={styles.sectionTitle}>Place a Bid</Text>
-                            <View style={styles.bidInfo}>
-                                <Text style={styles.label}>Current Bid</Text>
-                                <Text style={styles.currentBid}>${lot.currentBid.toLocaleString()}</Text>
-                            </View>
-
-                            <View style={styles.bidInputRow}>
-                                <Text style={styles.currency}>$</Text>
-                                <TextInput
-                                    style={styles.bidInput}
-                                    value={bidAmount}
-                                    onChangeText={setBidAmount}
-                                    keyboardType="numeric"
-                                />
-                            </View>
-                            <Text style={styles.helperText}>Minimum bid: ${(lot.currentBid + (lot.minBidIncrement || 10)).toLocaleString()}</Text>
-
-                            <TouchableOpacity
-                                style={[styles.bidButton, submitting && styles.disabledButton]}
-                                onPress={handleBid}
-                                disabled={submitting}
-                            >
-                                <Text style={styles.bidButtonText}>{submitting ? 'Placing Bid...' : 'Place Bid'}</Text>
-                            </TouchableOpacity>
-
-                            <View style={styles.divider} />
-
                             {existingTransactionId ? (
-                                <TouchableOpacity
-                                    style={[styles.buyNowButton, { backgroundColor: COLORS.success }]}
-                                    onPress={() => navigation.navigate('TransactionConfirmation', { transactionId: existingTransactionId })}
-                                >
-                                    <Text style={styles.buyNowText}>View Transaction</Text>
-                                </TouchableOpacity>
+                                <>
+                                    <Text style={styles.sectionTitle}>Transaction Active</Text>
+                                    <Text style={styles.helperText}>You have a pending transaction for this item.</Text>
+                                    <TouchableOpacity
+                                        style={[styles.buyNowButton, { backgroundColor: COLORS.success, marginTop: SPACING.sm }]}
+                                        onPress={() => navigation.navigate('TransactionConfirmation', { transactionId: existingTransactionId })}
+                                    >
+                                        <Text style={styles.buyNowText}>View Transaction</Text>
+                                    </TouchableOpacity>
+                                </>
+                            ) : lot.status === 'active' ? (
+                                <>
+                                    <Text style={styles.sectionTitle}>Place a Bid</Text>
+                                    <View style={styles.bidInfo}>
+                                        <Text style={styles.label}>Current Bid</Text>
+                                        <Text style={styles.currentBid}>${lot.currentBid.toLocaleString()}</Text>
+                                    </View>
+
+                                    <View style={styles.bidInputRow}>
+                                        <Text style={styles.currency}>$</Text>
+                                        <TextInput
+                                            style={styles.bidInput}
+                                            value={bidAmount}
+                                            onChangeText={setBidAmount}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                    <Text style={styles.helperText}>Minimum bid: ${(lot.currentBid + (lot.minBidIncrement || 10)).toLocaleString()}</Text>
+
+                                    <TouchableOpacity
+                                        style={[styles.bidButton, submitting && styles.disabledButton]}
+                                        onPress={handleBid}
+                                        disabled={submitting}
+                                    >
+                                        <Text style={styles.bidButtonText}>{submitting ? 'Placing Bid...' : 'Place Bid'}</Text>
+                                    </TouchableOpacity>
+
+                                    <View style={styles.divider} />
+
+                                    <TouchableOpacity
+                                        style={[styles.buyNowButton, submitting && styles.disabledButton]}
+                                        onPress={handleBuyNow}
+                                        disabled={submitting}
+                                    >
+                                        <Text style={styles.buyNowText}>Buy Now for ${(lot.buyNowPrice || lot.currentBid).toLocaleString()}</Text>
+                                    </TouchableOpacity>
+                                </>
                             ) : (
-                                <TouchableOpacity
-                                    style={[styles.buyNowButton, submitting && styles.disabledButton]}
-                                    onPress={handleBuyNow}
-                                    disabled={submitting}
-                                >
-                                    <Text style={styles.buyNowText}>Buy Now for ${(lot.buyNowPrice || lot.currentBid).toLocaleString()}</Text>
-                                </TouchableOpacity>
+                                <View style={styles.center}>
+                                    <Text style={[styles.sectionTitle, { color: COLORS.textMuted }]}>
+                                        {lot.status === 'won' ? 'Sold' : 'Auction Ended'}
+                                    </Text>
+                                    <Text style={styles.helperText}>This auction is no longer active.</Text>
+                                </View>
                             )}
                         </View>
                     )}

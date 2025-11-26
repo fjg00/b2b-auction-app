@@ -93,7 +93,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
         // Map the joined data to our Lot interface
         const lots = bids.map((bid: any) => {
             const lot = bid.lot;
-            if (!lot) return null;
+            if (lot.status !== 'ACTIVE') return null;
 
             // Get the max bid for this lot
             const maxBid = lotBidsMap.get(lot.id) || lot.start_price;
@@ -142,27 +142,46 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
         if (error) throw error;
         if (!lots) return [];
 
-        return lots.map((lot: any) => ({
-            id: lot.id,
-            title: lot.title,
-            image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-            images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
-            location: 'Beirut, Lebanon',
-            expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            condition: 'Overstock',
-            currentBid: lot.start_price,
-            minBidIncrement: lot.min_bid_increment,
-            buyNowPrice: lot.buy_now_price,
-            endTime: new Date(lot.end_time),
-            status: lot.status.toLowerCase(),
-            bidsCount: 0,
-            watchCount: 0,
-            description: lot.description,
-            seller: { name: 'Me', rating: 5, location: 'Beirut' },
-            seller_id: lot.seller_id,
-            details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
-            bids: []
-        }));
+        // Fetch bids for these lots
+        const lotIds = lots.map((l: any) => l.id);
+        const { data: allBids } = await supabase
+            .from('bids')
+            .select('lot_id, amount')
+            .in('lot_id', lotIds);
+
+        const bidsMap = new Map<string, { maxBid: number, count: number }>();
+        allBids?.forEach((bid: any) => {
+            const current = bidsMap.get(bid.lot_id) || { maxBid: 0, count: 0 };
+            bidsMap.set(bid.lot_id, {
+                maxBid: Math.max(current.maxBid, bid.amount),
+                count: current.count + 1
+            });
+        });
+
+        return lots.map((lot: any) => {
+            const bidInfo = bidsMap.get(lot.id) || { maxBid: 0, count: 0 };
+            return {
+                id: lot.id,
+                title: lot.title,
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+                location: 'Beirut, Lebanon',
+                expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                condition: 'Overstock',
+                currentBid: bidInfo.maxBid || lot.start_price,
+                minBidIncrement: lot.min_bid_increment,
+                buyNowPrice: lot.buy_now_price,
+                endTime: new Date(lot.end_time),
+                status: lot.status.toLowerCase(),
+                bidsCount: bidInfo.count,
+                watchCount: 0,
+                description: lot.description,
+                seller: { name: 'Me', rating: 5, location: 'Beirut' },
+                seller_id: lot.seller_id,
+                details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
+                bids: []
+            };
+        });
     } catch (error) {
         console.error('Error fetching my sales:', error);
         return [];

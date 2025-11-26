@@ -1,4 +1,4 @@
-export type AuctionStatus = 'LIVE' | 'UPCOMING' | 'ENDED' | 'won';
+export type AuctionStatus = 'LIVE' | 'UPCOMING' | 'ENDED' | 'won' | 'active';
 
 export type Condition =
     | 'Near Expiry'
