@@ -3,13 +3,20 @@
 import { supabase } from '../lib/supabase';
 import { Lot } from '@shared/types';
 
-export const fetchAuctionsFromSupabase = async (): Promise<Lot[]> => {
+export const fetchAuctionsFromSupabase = async (userId?: string): Promise<Lot[]> => {
     try {
-        const { data: lots, error } = await supabase
+        let query = supabase
             .from('lots')
             .select('*, seller:users!seller_id(full_name, city), warehouse:addresses!warehouse_id(city)')
             .eq('status', 'ACTIVE')
+            .gt('end_time', new Date().toISOString())
             .order('created_at', { ascending: false });
+
+        if (userId) {
+            query = query.neq('seller_id', userId);
+        }
+
+        const { data: lots, error } = await query;
 
         if (error) {
             console.error('Error fetching lots from Supabase:', error);

@@ -8,7 +8,10 @@ import { fetchAuctionsFromSupabase } from '../services/auctionService';
 import { Lot } from '@shared/types';
 import { Search } from 'lucide-react-native';
 
+import { useAuth } from '../context/AuthContext';
+
 export default function HomeScreen({ navigation }: any) {
+    const { user } = useAuth();
     const [auctions, setAuctions] = useState<Lot[]>([]);
     const [filteredAuctions, setFilteredAuctions] = useState<Lot[]>([]);
     const [loading, setLoading] = useState(true);
@@ -17,13 +20,13 @@ export default function HomeScreen({ navigation }: any) {
     useFocusEffect(
         useCallback(() => {
             loadAuctions();
-        }, [])
+        }, [user])
     );
 
     const loadAuctions = async () => {
         setLoading(true);
         try {
-            const data = await fetchAuctionsFromSupabase();
+            const data = await fetchAuctionsFromSupabase(user?.id);
             // Filter out won items - they should only appear in My Bids
             // Note: Supabase query could handle this filter too
             // Filter out won items and deduplicate by ID
