@@ -41,8 +41,8 @@ export const fetchAuctionsFromSupabase = async (userId?: string): Promise<Lot[]>
         return lots.map((lot: any) => ({
             id: lot.id,
             title: lot.title,
-            image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-            images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+            image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+            images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
             location: lot.warehouse?.city || lot.seller?.city || 'Beirut, Lebanon',
             expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             condition: 'Overstock',
@@ -108,8 +108,8 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
             return {
                 id: lot.id,
                 title: lot.title,
-                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-                images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+                image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
                 location: 'Beirut, Lebanon',
                 expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 condition: 'Overstock',
@@ -190,8 +190,8 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
             return {
                 id: lot.id,
                 title: lot.title,
-                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-                images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+                image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
                 location: 'Beirut, Lebanon',
                 expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 condition: 'Overstock',
@@ -256,8 +256,8 @@ export const fetchLotById = async (id: string): Promise<Lot | undefined> => {
         return {
             id: lot.id,
             title: lot.title,
-            image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-            images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+            image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+            images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
             location: lot.warehouse?.city || lot.seller?.city || 'Beirut, Lebanon',
             expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             condition: 'Overstock',
@@ -353,6 +353,8 @@ export const createLot = async (formData: any, userId: string): Promise<{ succes
                     end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
                     warehouse_id: formData.warehouseId,
                     delivery_method: formData.deliveryMethod,
+                    image: formData.images?.[0] || null,
+                    images: formData.images || [],
                 }
             ]);
 
@@ -454,7 +456,7 @@ export const getTransaction = async (id: string): Promise<Transaction | undefine
             lot: {
                 id: tx.lot.id,
                 title: tx.lot.title,
-                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop', // Placeholder
+                image: tx.lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop', // Placeholder
                 location: 'Beirut', // Placeholder
                 expiryDate: tx.lot.end_time,
                 condition: 'Overstock', // Placeholder
@@ -546,7 +548,7 @@ export const fetchMyTransactions = async (userId: string): Promise<Transaction[]
             lot: {
                 id: tx.lot.id,
                 title: tx.lot.title,
-                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                image: tx.lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
                 location: 'Beirut',
                 expiryDate: tx.lot.end_time,
                 condition: 'Overstock',
