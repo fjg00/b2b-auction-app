@@ -8,7 +8,7 @@ import { fetchMyBids, fetchMyTransactions } from '../services/auctionService';
 import { Lot, Transaction } from '@shared/types';
 import { useAuth } from '../context/AuthContext';
 
-type Tab = 'bids' | 'purchased';
+type Tab = 'bids' | 'purchased' | 'history';
 
 export default function MyBidsScreen({ navigation }: any) {
     const { user } = useAuth();
@@ -34,7 +34,12 @@ export default function MyBidsScreen({ navigation }: any) {
                 setBids(data);
             } else {
                 const data = await fetchMyTransactions(user.id);
-                setTransactions(data);
+                // Filter based on tab
+                if (activeTab === 'purchased') {
+                    setTransactions(data.filter(t => t.status !== 'handed_over'));
+                } else {
+                    setTransactions(data.filter(t => t.status === 'handed_over'));
+                }
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -74,6 +79,7 @@ export default function MyBidsScreen({ navigation }: any) {
             <View style={styles.tabContainer}>
                 {renderTab('bids', 'Active Bids')}
                 {renderTab('purchased', 'Purchased Items')}
+                {renderTab('history', 'Purchase History')}
             </View>
 
             {loading ? (
@@ -107,7 +113,7 @@ export default function MyBidsScreen({ navigation }: any) {
                     ListEmptyComponent={
                         <View style={styles.center}>
                             <Text style={{ color: COLORS.textMuted }}>
-                                {activeTab === 'bids' ? 'No active bids' : 'No purchased items yet'}
+                                {activeTab === 'bids' ? 'No active bids' : activeTab === 'purchased' ? 'No purchased items yet' : 'No completed purchases'}
                             </Text>
                         </View>
                     }
