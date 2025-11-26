@@ -430,16 +430,16 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 <Text style={styles.infoLabel}>Buyer</Text>
                 {role === 'seller' ? (
                     <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.buyerId })}>
-                        <Text style={styles.linkValue}>{transaction.buyer?.name}</Text>
+                        <Text style={[styles.linkValue, { marginBottom: SPACING.md }]}>{transaction.buyer?.name}</Text>
                     </TouchableOpacity>
                 ) : (
-                    <Text style={styles.infoValue}>{transaction.buyer?.name}</Text>
+                    <Text style={[styles.infoValue, { marginBottom: SPACING.md }]}>{transaction.buyer?.name}</Text>
                 )}
                 {role === 'buyer' && (
                     <>
                         <Text style={styles.infoLabel}>Seller</Text>
                         <TouchableOpacity onPress={() => navigation.navigate('SellerProfile', { id: transaction.sellerId })}>
-                            <Text style={styles.linkValue}>{transaction.seller?.name}</Text>
+                            <Text style={[styles.linkValue, { marginBottom: SPACING.md }]}>{transaction.seller?.name}</Text>
                         </TouchableOpacity>
                     </>
                 )}
@@ -542,7 +542,7 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
             </View>
 
             {role === 'seller' && (
-                <TouchableOpacity style={styles.primaryButton} onPress={handleConfirmHandover}>
+                <TouchableOpacity style={[styles.primaryButton, { marginTop: SPACING.lg }]} onPress={handleConfirmHandover}>
                     <Text style={styles.primaryButtonText}>Confirm Goods Released</Text>
                 </TouchableOpacity>
             )}
