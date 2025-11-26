@@ -166,17 +166,21 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
             });
         });
 
-        // Fetch transactions to verify sold status
+        // Fetch transactions to verify sold status and get transaction status
         const { data: transactions } = await supabase
             .from('transactions')
-            .select('lot_id')
+            .select('lot_id, status')
             .in('lot_id', lotIds);
 
-        const soldLotIds = new Set(transactions?.map((t: any) => t.lot_id));
+        const transactionsMap = new Map<string, string>();
+        transactions?.forEach((t: any) => {
+            transactionsMap.set(t.lot_id, t.status);
+        });
 
         return lots.map((lot: any) => {
             const bidInfo = bidsMap.get(lot.id) || { maxBid: 0, count: 0 };
-            const isSold = soldLotIds.has(lot.id) || lot.status === 'won' || lot.status === 'WON';
+            const transactionStatus = transactionsMap.get(lot.id);
+            const isSold = !!transactionStatus || lot.status === 'won' || lot.status === 'WON';
 
             return {
                 id: lot.id,
@@ -191,6 +195,7 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 buyNowPrice: lot.buy_now_price,
                 endTime: new Date(lot.end_time),
                 status: isSold ? 'won' : lot.status.toLowerCase(),
+                transactionStatus: transactionStatus as any,
                 bidsCount: bidInfo.count,
                 watchCount: 0,
                 description: lot.description,

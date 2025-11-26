@@ -12,11 +12,33 @@ interface SellerLotCardProps {
 export function SellerLotCard({ lot, onPress }: SellerLotCardProps) {
     const getStatusBadge = () => {
         if (lot.status === 'won') {
-            return (
-                <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
-                    <Text style={[styles.statusBadgeText, { color: '#059669' }]}>SOLD</Text>
-                </View>
-            );
+            // Show transaction status for sold items
+            switch (lot.transactionStatus) {
+                case 'pending_payment':
+                    return (
+                        <View style={[styles.statusBadge, { backgroundColor: '#FEF3C7' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#D97706' }]}>AWAITING PAYMENT</Text>
+                        </View>
+                    );
+                case 'payment_sent':
+                    return (
+                        <View style={[styles.statusBadge, { backgroundColor: '#DBEAFE' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#1E40AF' }]}>CONFIRM PAYMENT</Text>
+                        </View>
+                    );
+                case 'completed':
+                    return (
+                        <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#059669' }]}>AWAITING PICKUP</Text>
+                        </View>
+                    );
+                default:
+                    return (
+                        <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#059669' }]}>SOLD</Text>
+                        </View>
+                    );
+            }
         }
         return (
             <View style={[styles.statusBadge, { backgroundColor: '#E0F2F1' }]}>
