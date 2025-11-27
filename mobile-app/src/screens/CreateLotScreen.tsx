@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { createLot } from '../services/auctionService';
 import { getAddresses, Address } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { PRODUCT_CATEGORIES, CONDITION_CATEGORIES } from '@shared/constants';
-import { Package, DollarSign, Upload, Calendar, ChevronDown, X, MapPin, Truck, Trash2 } from 'lucide-react-native';
-import { pickDocument, uploadFile } from '../services/storageService';
-import { Image } from 'react-native';
+import { Package, DollarSign, Upload, Calendar, ChevronDown, X, MapPin, Truck } from 'lucide-react-native';
 
 export default function CreateLotScreen({ navigation }: any) {
     const { user } = useAuth();
@@ -24,10 +22,7 @@ export default function CreateLotScreen({ navigation }: any) {
         startBid: '',
         buyNow: '',
         duration: '3 Days',
-        images: [] as string[],
     });
-
-    const [uploading, setUploading] = useState(false);
 
     // Picker State
     const [pickerVisible, setPickerVisible] = useState(false);
@@ -63,43 +58,6 @@ export default function CreateLotScreen({ navigation }: any) {
     useEffect(() => {
         loadAddresses();
     }, [user]);
-
-    const handlePickImage = async () => {
-        try {
-            const file = await pickDocument();
-            if (!file) return;
-
-            if (!file.mimeType?.startsWith('image/')) {
-                Alert.alert('Invalid File', 'Please select an image file.');
-                return;
-            }
-
-            setUploading(true);
-            const path = `lots/${user?.id}/${Date.now()}_${file.name}`;
-            const publicUrl = await uploadFile(file, 'lot-images', path);
-
-            if (publicUrl) {
-                setFormData(prev => ({
-                    ...prev,
-                    images: [...prev.images, publicUrl]
-                }));
-            } else {
-                Alert.alert('Error', 'Failed to upload image');
-            }
-        } catch (error) {
-            console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to pick image');
-        } finally {
-            setUploading(false);
-        }
-    };
-
-    const handleRemoveImage = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }));
-    };
 
     const handleSubmit = async () => {
         if (!formData.title || !formData.quantity || !formData.startBid || !formData.warehouseId) {
@@ -279,39 +237,10 @@ export default function CreateLotScreen({ navigation }: any) {
                 {/* Photos */}
                 <View style={styles.card}>
                     {renderSectionHeader(<Upload size={20} color={COLORS.primary} />, "Photos")}
-
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoList}>
-                        {formData.images.map((uri, index) => (
-                            <View key={index} style={styles.photoContainer}>
-                                <Image source={{ uri }} style={styles.photo} />
-                                <TouchableOpacity
-                                    style={styles.removePhotoButton}
-                                    onPress={() => handleRemoveImage(index)}
-                                >
-                                    <X size={16} color="white" />
-                                </TouchableOpacity>
-                            </View>
-                        ))}
-
-                        <TouchableOpacity
-                            style={styles.addPhotoButton}
-                            onPress={handlePickImage}
-                            disabled={uploading}
-                        >
-                            {uploading ? (
-                                <ActivityIndicator size="small" color={COLORS.primary} />
-                            ) : (
-                                <>
-                                    <Upload size={24} color={COLORS.primary} />
-                                    <Text style={styles.addPhotoText}>Add Photo</Text>
-                                </>
-                            )}
-                        </TouchableOpacity>
-                    </ScrollView>
-
-                    {formData.images.length === 0 && (
-                        <Text style={styles.helperText}>Upload at least one photo of your items.</Text>
-                    )}
+                    <TouchableOpacity style={styles.uploadArea}>
+                        <Upload size={32} color={COLORS.textMuted} />
+                        <Text style={styles.uploadText}>Tap to upload photos</Text>
+                    </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
@@ -521,51 +450,5 @@ const styles = StyleSheet.create({
         height: 8,
         borderRadius: 4,
         backgroundColor: COLORS.primary,
-    },
-    photoList: {
-        flexDirection: 'row',
-        marginBottom: SPACING.sm,
-    },
-    photoContainer: {
-        width: 100,
-        height: 100,
-        marginRight: SPACING.md,
-        borderRadius: RADIUS.md,
-        overflow: 'hidden',
-        position: 'relative',
-    },
-    photo: {
-        width: '100%',
-        height: '100%',
-    },
-    removePhotoButton: {
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        borderRadius: RADIUS.full,
-        padding: 4,
-    },
-    addPhotoButton: {
-        width: 100,
-        height: 100,
-        borderRadius: RADIUS.md,
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-        borderStyle: 'dashed',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: COLORS.primaryLight,
-    },
-    addPhotoText: {
-        fontSize: 12,
-        color: COLORS.primary,
-        fontWeight: '600',
-        marginTop: 4,
-    },
-    helperText: {
-        fontSize: 12,
-        color: COLORS.textMuted,
-        marginTop: SPACING.xs,
     },
 });

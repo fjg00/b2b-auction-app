@@ -41,8 +41,8 @@ export const fetchAuctionsFromSupabase = async (userId?: string): Promise<Lot[]>
         return lots.map((lot: any) => ({
             id: lot.id,
             title: lot.title,
-            image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-            images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+            image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+            images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
             location: lot.warehouse?.city || lot.seller?.city || 'Beirut, Lebanon',
             expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             condition: 'Overstock',
@@ -80,7 +80,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
         // Fetch bids for this user, and join the related lot data
         const { data: bids, error } = await supabase
             .from('bids')
-            .select('*, lot:lots(*, seller:users!seller_id(full_name, company_name))')
+            .select('*, lot:lots(*)')
             .eq('bidder_id', userId)
             .order('created_at', { ascending: false });
 
@@ -108,8 +108,8 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
             return {
                 id: lot.id,
                 title: lot.title,
-                image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-                images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
                 location: 'Beirut, Lebanon',
                 expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 condition: 'Overstock',
@@ -121,11 +121,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
                 bidsCount: 0,
                 watchCount: 0,
                 description: lot.description,
-                seller: {
-                    name: lot.seller?.company_name || lot.seller?.full_name || 'Unknown',
-                    rating: 5,
-                    location: 'Beirut'
-                },
+                seller: { name: 'Unknown', rating: 5, location: 'Beirut' },
                 seller_id: lot.seller_id,
                 details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
                 bids: []
@@ -173,29 +169,24 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
         // Fetch transactions to verify sold status and get transaction status
         const { data: transactions } = await supabase
             .from('transactions')
-            .select('lot_id, status, updated_at, buyer:users!buyer_id(full_name)')
+            .select('lot_id, status')
             .in('lot_id', lotIds);
 
-        const transactionsMap = new Map<string, { status: string, buyerName?: string, date?: string }>();
+        const transactionsMap = new Map<string, string>();
         transactions?.forEach((t: any) => {
-            transactionsMap.set(t.lot_id, {
-                status: t.status,
-                buyerName: t.buyer?.full_name,
-                date: t.updated_at
-            });
+            transactionsMap.set(t.lot_id, t.status);
         });
 
         return lots.map((lot: any) => {
             const bidInfo = bidsMap.get(lot.id) || { maxBid: 0, count: 0 };
-            const txInfo = transactionsMap.get(lot.id);
-            const transactionStatus = txInfo?.status;
+            const transactionStatus = transactionsMap.get(lot.id);
             const isSold = !!transactionStatus || lot.status === 'won' || lot.status === 'WON';
 
             return {
                 id: lot.id,
                 title: lot.title,
-                image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-                images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
                 location: 'Beirut, Lebanon',
                 expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 condition: 'Overstock',
@@ -205,8 +196,6 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 endTime: new Date(lot.end_time),
                 status: isSold ? 'won' : lot.status.toLowerCase(),
                 transactionStatus: transactionStatus as any,
-                buyerName: txInfo?.buyerName,
-                soldDate: txInfo?.date,
                 bidsCount: bidInfo.count,
                 watchCount: 0,
                 description: lot.description,
@@ -260,8 +249,8 @@ export const fetchLotById = async (id: string): Promise<Lot | undefined> => {
         return {
             id: lot.id,
             title: lot.title,
-            image: lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
-            images: lot.images || ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
+            image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+            images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
             location: lot.warehouse?.city || lot.seller?.city || 'Beirut, Lebanon',
             expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             condition: 'Overstock',
@@ -299,17 +288,12 @@ export const placeBid = async (lotId: string, amount: number, userId: string): P
         // 1. Check if user is trying to bid on their own lot
         const { data: lot, error: lotError } = await supabase
             .from('lots')
-            .select('seller_id, start_price, min_bid_increment, status')
+            .select('seller_id, start_price, min_bid_increment')
             .eq('id', lotId)
             .single();
 
         if (lotError || !lot) {
             return { success: false, message: 'Lot not found' };
-        }
-
-        // Check if lot is active
-        if (lot.status !== 'ACTIVE') {
-            return { success: false, message: 'This auction is no longer active' };
         }
 
         // Prevent sellers from bidding on their own lots
@@ -357,8 +341,6 @@ export const createLot = async (formData: any, userId: string): Promise<{ succes
                     end_time: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
                     warehouse_id: formData.warehouseId,
                     delivery_method: formData.deliveryMethod,
-                    image: formData.images?.[0] || null,
-                    images: formData.images || [],
                 }
             ]);
 
@@ -380,19 +362,15 @@ import { Transaction } from '@shared/types';
 
 export const createTransaction = async (lotId: string, buyerId: string, amount: number): Promise<{ success: boolean; transactionId?: string; message: string }> => {
     try {
-        // 1. Get seller ID and status from lot
+        // 1. Get seller ID from lot
         const { data: lot, error: lotError } = await supabase
             .from('lots')
-            .select('seller_id, status')
+            .select('seller_id')
             .eq('id', lotId)
             .single();
 
         if (lotError || !lot) {
             return { success: false, message: 'Lot not found' };
-        }
-
-        if (lot.status !== 'ACTIVE') {
-            return { success: false, message: 'This item is no longer available' };
         }
 
         // 2. Create transaction
@@ -460,7 +438,7 @@ export const getTransaction = async (id: string): Promise<Transaction | undefine
             lot: {
                 id: tx.lot.id,
                 title: tx.lot.title,
-                image: tx.lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop', // Placeholder
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop', // Placeholder
                 location: 'Beirut', // Placeholder
                 expiryDate: tx.lot.end_time,
                 condition: 'Overstock', // Placeholder
@@ -552,7 +530,7 @@ export const fetchMyTransactions = async (userId: string): Promise<Transaction[]
             lot: {
                 id: tx.lot.id,
                 title: tx.lot.title,
-                image: tx.lot.image || 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
+                image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
                 location: 'Beirut',
                 expiryDate: tx.lot.end_time,
                 condition: 'Overstock',

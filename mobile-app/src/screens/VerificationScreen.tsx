@@ -4,17 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { Upload, CheckCircle, Building2, User, FileText, Shield } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
-import { getBusinessVerification, updateBusinessVerification, AccountType, LegalForm } from '../services/profileService';
-import { pickDocument, uploadFile } from '../services/storageService';
+import { getBusinessVerification, updateBusinessVerification, uploadBusinessDocument, AccountType, LegalForm } from '../services/profileService';
 
 export default function VerificationScreen({ navigation }: any) {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [accountType, setAccountType] = useState<AccountType>('individual');
-    const [verificationStatus, setVerificationStatus] = useState<string>('pending');
-
-    const isLocked = verificationStatus === 'under_review' || verificationStatus === 'verified';
 
     // Individual fields
     const [nationalId, setNationalId] = useState('');
@@ -38,7 +34,6 @@ export default function VerificationScreen({ navigation }: any) {
     const [commercialRegisterDoc, setCommercialRegisterDoc] = useState<string | null>(null);
     const [mofCertificate, setMofCertificate] = useState<string | null>(null);
     const [vatCertificate, setVatCertificate] = useState<string | null>(null);
-    const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
 
     useEffect(() => {
         loadVerificationData();
@@ -53,9 +48,6 @@ export default function VerificationScreen({ navigation }: any) {
             // Set account type
             if (data.account_type) {
                 setAccountType(data.account_type);
-            }
-            if (data.business_verification_status) {
-                setVerificationStatus(data.business_verification_status);
             }
 
             // Individual fields
@@ -88,41 +80,10 @@ export default function VerificationScreen({ navigation }: any) {
         }
     };
 
-    const handleDocumentUpload = async (docType: 'national_id' | 'commercial_register' | 'mof_certificate' | 'vat_certificate') => {
-        const file = await pickDocument();
-        if (!file) return;
-
-        setUploadingDoc(docType);
-        try {
-            // Create a unique path: verification/{userId}/{docType}_{timestamp}
-            const path = `verification/${user?.id}/${docType}_${Date.now()}`;
-            const publicUrl = await uploadFile(file, 'verification-documents', path);
-
-            if (publicUrl) {
-                switch (docType) {
-                    case 'national_id':
-                        setNationalIdDocument(publicUrl);
-                        break;
-                    case 'commercial_register':
-                        setCommercialRegisterDoc(publicUrl);
-                        break;
-                    case 'mof_certificate':
-                        setMofCertificate(publicUrl);
-                        break;
-                    case 'vat_certificate':
-                        setVatCertificate(publicUrl);
-                        break;
-                }
-                Alert.alert('Success', 'Document uploaded successfully');
-            } else {
-                Alert.alert('Error', 'Failed to upload document');
-            }
-        } catch (error) {
-            console.error('Upload error:', error);
-            Alert.alert('Error', 'An error occurred during upload');
-        } finally {
-            setUploadingDoc(null);
-        }
+    const handleDocumentUpload = (docType: 'national_id' | 'commercial_register' | 'mof_certificate' | 'vat_certificate') => {
+        // TODO: Implement document picker
+        // For now, just show alert
+        Alert.alert('Upload', `Upload ${docType} document - Document picker to be implemented`);
     };
 
     const validateForm = () => {
@@ -270,19 +231,8 @@ export default function VerificationScreen({ navigation }: any) {
 
                     <View style={styles.typeSelector}>
                         <TouchableOpacity
-                            style={[
-                                styles.typeCard,
-                                accountType === 'individual' && styles.typeCardActive,
-                                isLocked && accountType !== 'individual' && styles.typeCardDisabled
-                            ]}
-                            onPress={() => {
-                                if (!isLocked) {
-                                    setAccountType('individual');
-                                } else {
-                                    Alert.alert('Selection Locked', 'You cannot change your account type while verification is under review or verified.');
-                                }
-                            }}
-                            activeOpacity={isLocked ? 1 : 0.7}
+                            style={[styles.typeCard, accountType === 'individual' && styles.typeCardActive]}
+                            onPress={() => setAccountType('individual')}
                         >
                             <User size={32} color={accountType === 'individual' ? COLORS.primary : COLORS.textMuted} />
                             <Text style={[styles.typeTitle, accountType === 'individual' && styles.typeTitleActive]}>
@@ -292,19 +242,8 @@ export default function VerificationScreen({ navigation }: any) {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[
-                                styles.typeCard,
-                                accountType === 'business' && styles.typeCardActive,
-                                isLocked && accountType !== 'business' && styles.typeCardDisabled
-                            ]}
-                            onPress={() => {
-                                if (!isLocked) {
-                                    setAccountType('business');
-                                } else {
-                                    Alert.alert('Selection Locked', 'You cannot change your account type while verification is under review or verified.');
-                                }
-                            }}
-                            activeOpacity={isLocked ? 1 : 0.7}
+                            style={[styles.typeCard, accountType === 'business' && styles.typeCardActive]}
+                            onPress={() => setAccountType('business')}
                         >
                             <Building2 size={32} color={accountType === 'business' ? COLORS.primary : COLORS.textMuted} />
                             <Text style={[styles.typeTitle, accountType === 'business' && styles.typeTitleActive]}>
@@ -313,14 +252,6 @@ export default function VerificationScreen({ navigation }: any) {
                             <Text style={styles.typeDescription}>Company or organization</Text>
                         </TouchableOpacity>
                     </View>
-                    {isLocked && (
-                        <View style={styles.lockedBanner}>
-                            <Shield size={16} color={COLORS.textMuted} />
-                            <Text style={styles.lockedText}>
-                                Your verification information is locked while {verificationStatus === 'verified' ? 'active' : 'under review'}.
-                            </Text>
-                        </View>
-                    )}
                 </View>
 
                 {/* Individual Verification */}
@@ -331,32 +262,24 @@ export default function VerificationScreen({ navigation }: any) {
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>National ID Number *</Text>
                             <TextInput
-                                style={[styles.input, isLocked && styles.inputDisabled]}
+                                style={styles.input}
                                 value={nationalId}
                                 onChangeText={setNationalId}
                                 placeholder="Enter your national ID number"
                                 placeholderTextColor={COLORS.textMuted}
-                                editable={!isLocked}
                             />
                         </View>
 
                         <View style={styles.uploadSection}>
                             <Text style={styles.label}>National ID Document *</Text>
                             <TouchableOpacity
-                                style={[styles.uploadButton, isLocked && styles.uploadButtonDisabled]}
+                                style={styles.uploadButton}
                                 onPress={() => handleDocumentUpload('national_id')}
-                                disabled={uploadingDoc === 'national_id' || isLocked}
                             >
-                                {uploadingDoc === 'national_id' ? (
-                                    <ActivityIndicator size="small" color={COLORS.primary} />
-                                ) : (
-                                    <>
-                                        <Upload size={20} color={COLORS.primary} />
-                                        <Text style={styles.uploadButtonText}>
-                                            {nationalIdDocument ? 'Change Document' : 'Upload National ID'}
-                                        </Text>
-                                    </>
-                                )}
+                                <Upload size={20} color={COLORS.primary} />
+                                <Text style={styles.uploadButtonText}>
+                                    {nationalIdDocument ? 'Change Document' : 'Upload National ID'}
+                                </Text>
                             </TouchableOpacity>
                             {nationalIdDocument && (
                                 <View style={styles.uploadedBadge}>
@@ -379,12 +302,11 @@ export default function VerificationScreen({ navigation }: any) {
                                 <Text style={styles.label}>Legal Entity Name *</Text>
                                 <Text style={styles.helperText}>As registered in Commercial Register</Text>
                                 <TextInput
-                                    style={[styles.input, isLocked && styles.inputDisabled]}
+                                    style={styles.input}
                                     value={legalEntityName}
                                     onChangeText={setLegalEntityName}
                                     placeholder="e.g., ABC Trading Company S.A.R.L."
                                     placeholderTextColor={COLORS.textMuted}
-                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -392,12 +314,11 @@ export default function VerificationScreen({ navigation }: any) {
                                 <Text style={styles.label}>Trade Name / Brand Name *</Text>
                                 <Text style={styles.helperText}>What customers see</Text>
                                 <TextInput
-                                    style={[styles.input, isLocked && styles.inputDisabled]}
+                                    style={styles.input}
                                     value={tradeName}
                                     onChangeText={setTradeName}
                                     placeholder="e.g., ABC Store"
                                     placeholderTextColor={COLORS.textMuted}
-                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -409,11 +330,9 @@ export default function VerificationScreen({ navigation }: any) {
                                             key={form}
                                             style={[
                                                 styles.legalFormOption,
-                                                legalForm === form && styles.legalFormOptionActive,
-                                                isLocked && legalForm !== form && styles.legalFormOptionDisabled
+                                                legalForm === form && styles.legalFormOptionActive
                                             ]}
                                             onPress={() => setLegalForm(form)}
-                                            disabled={isLocked}
                                         >
                                             <Text style={[
                                                 styles.legalFormText,
@@ -435,12 +354,11 @@ export default function VerificationScreen({ navigation }: any) {
                                 <Text style={styles.label}>Commercial Register Number *</Text>
                                 <Text style={styles.helperText}>رقم السجل التجاري</Text>
                                 <TextInput
-                                    style={[styles.input, isLocked && styles.inputDisabled]}
+                                    style={styles.input}
                                     value={commercialRegisterNumber}
                                     onChangeText={setCommercialRegisterNumber}
                                     placeholder="Enter Commercial Register number"
                                     placeholderTextColor={COLORS.textMuted}
-                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -448,12 +366,11 @@ export default function VerificationScreen({ navigation }: any) {
                                 <Text style={styles.label}>Ministry of Finance Tax ID / TIN *</Text>
                                 <Text style={styles.helperText}>رقم المكلف</Text>
                                 <TextInput
-                                    style={[styles.input, isLocked && styles.inputDisabled]}
+                                    style={styles.input}
                                     value={taxId}
                                     onChangeText={setTaxId}
                                     placeholder="Enter Tax ID"
                                     placeholderTextColor={COLORS.textMuted}
-                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -461,13 +378,8 @@ export default function VerificationScreen({ navigation }: any) {
                                 <TouchableOpacity
                                     style={styles.checkboxRow}
                                     onPress={() => setIsVatRegistered(!isVatRegistered)}
-                                    disabled={isLocked}
                                 >
-                                    <View style={[
-                                        styles.checkbox,
-                                        isVatRegistered && styles.checkboxChecked,
-                                        isLocked && styles.checkboxDisabled
-                                    ]}>
+                                    <View style={[styles.checkbox, isVatRegistered && styles.checkboxChecked]}>
                                         {isVatRegistered && <CheckCircle size={16} color="white" />}
                                     </View>
                                     <Text style={styles.checkboxLabel}>VAT Registered</Text>
@@ -478,12 +390,11 @@ export default function VerificationScreen({ navigation }: any) {
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>VAT Registration Number *</Text>
                                     <TextInput
-                                        style={[styles.input, isLocked && styles.inputDisabled]}
+                                        style={styles.input}
                                         value={vatNumber}
                                         onChangeText={setVatNumber}
                                         placeholder="Enter VAT number"
                                         placeholderTextColor={COLORS.textMuted}
-                                        editable={!isLocked}
                                     />
                                 </View>
                             )}
@@ -496,20 +407,13 @@ export default function VerificationScreen({ navigation }: any) {
                             <View style={styles.uploadSection}>
                                 <Text style={styles.label}>Recent Commercial Register Extract *</Text>
                                 <TouchableOpacity
-                                    style={[styles.uploadButton, isLocked && styles.uploadButtonDisabled]}
+                                    style={styles.uploadButton}
                                     onPress={() => handleDocumentUpload('commercial_register')}
-                                    disabled={uploadingDoc === 'commercial_register' || isLocked}
                                 >
-                                    {uploadingDoc === 'commercial_register' ? (
-                                        <ActivityIndicator size="small" color={COLORS.primary} />
-                                    ) : (
-                                        <>
-                                            <Upload size={20} color={COLORS.primary} />
-                                            <Text style={styles.uploadButtonText}>
-                                                {commercialRegisterDoc ? 'Change Document' : 'Upload CR Extract'}
-                                            </Text>
-                                        </>
-                                    )}
+                                    <Upload size={20} color={COLORS.primary} />
+                                    <Text style={styles.uploadButtonText}>
+                                        {commercialRegisterDoc ? 'Change Document' : 'Upload CR Extract'}
+                                    </Text>
                                 </TouchableOpacity>
                                 {commercialRegisterDoc && (
                                     <View style={styles.uploadedBadge}>
@@ -522,20 +426,13 @@ export default function VerificationScreen({ navigation }: any) {
                             <View style={styles.uploadSection}>
                                 <Text style={styles.label}>MoF Registration Certificate *</Text>
                                 <TouchableOpacity
-                                    style={[styles.uploadButton, isLocked && styles.uploadButtonDisabled]}
+                                    style={styles.uploadButton}
                                     onPress={() => handleDocumentUpload('mof_certificate')}
-                                    disabled={uploadingDoc === 'mof_certificate' || isLocked}
                                 >
-                                    {uploadingDoc === 'mof_certificate' ? (
-                                        <ActivityIndicator size="small" color={COLORS.primary} />
-                                    ) : (
-                                        <>
-                                            <Upload size={20} color={COLORS.primary} />
-                                            <Text style={styles.uploadButtonText}>
-                                                {mofCertificate ? 'Change Document' : 'Upload MoF Certificate'}
-                                            </Text>
-                                        </>
-                                    )}
+                                    <Upload size={20} color={COLORS.primary} />
+                                    <Text style={styles.uploadButtonText}>
+                                        {mofCertificate ? 'Change Document' : 'Upload MoF Certificate'}
+                                    </Text>
                                 </TouchableOpacity>
                                 {mofCertificate && (
                                     <View style={styles.uploadedBadge}>
@@ -549,20 +446,13 @@ export default function VerificationScreen({ navigation }: any) {
                                 <View style={styles.uploadSection}>
                                     <Text style={styles.label}>VAT Registration Certificate *</Text>
                                     <TouchableOpacity
-                                        style={[styles.uploadButton, isLocked && styles.uploadButtonDisabled]}
+                                        style={styles.uploadButton}
                                         onPress={() => handleDocumentUpload('vat_certificate')}
-                                        disabled={uploadingDoc === 'vat_certificate' || isLocked}
                                     >
-                                        {uploadingDoc === 'vat_certificate' ? (
-                                            <ActivityIndicator size="small" color={COLORS.primary} />
-                                        ) : (
-                                            <>
-                                                <Upload size={20} color={COLORS.primary} />
-                                                <Text style={styles.uploadButtonText}>
-                                                    {vatCertificate ? 'Change Document' : 'Upload VAT Certificate'}
-                                                </Text>
-                                            </>
-                                        )}
+                                        <Upload size={20} color={COLORS.primary} />
+                                        <Text style={styles.uploadButtonText}>
+                                            {vatCertificate ? 'Change Document' : 'Upload VAT Certificate'}
+                                        </Text>
                                     </TouchableOpacity>
                                     {vatCertificate && (
                                         <View style={styles.uploadedBadge}>
@@ -581,7 +471,7 @@ export default function VerificationScreen({ navigation }: any) {
                             <View style={styles.inputGroup}>
                                 <Text style={styles.label}>Registered Business Address *</Text>
                                 <TextInput
-                                    style={[styles.input, styles.textArea, isLocked && styles.inputDisabled]}
+                                    style={[styles.input, styles.textArea]}
                                     value={registeredAddress}
                                     onChangeText={setRegisteredAddress}
                                     placeholder="Full registered address as per Commercial Register"
@@ -589,7 +479,6 @@ export default function VerificationScreen({ navigation }: any) {
                                     multiline
                                     numberOfLines={3}
                                     textAlignVertical="top"
-                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -597,14 +486,13 @@ export default function VerificationScreen({ navigation }: any) {
                                 <Text style={styles.label}>Official Email *</Text>
                                 <Text style={styles.helperText}>For invoices and contracts</Text>
                                 <TextInput
-                                    style={[styles.input, isLocked && styles.inputDisabled]}
+                                    style={styles.input}
                                     value={officialEmail}
                                     onChangeText={setOfficialEmail}
                                     placeholder="business@company.com"
                                     placeholderTextColor={COLORS.textMuted}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -612,13 +500,12 @@ export default function VerificationScreen({ navigation }: any) {
                                 <Text style={styles.label}>Phone / WhatsApp *</Text>
                                 <Text style={styles.helperText}>For customer support</Text>
                                 <TextInput
-                                    style={[styles.input, isLocked && styles.inputDisabled]}
+                                    style={styles.input}
                                     value={supportPhone}
                                     onChangeText={setSupportPhone}
                                     placeholder="+961 XX XXX XXX"
                                     placeholderTextColor={COLORS.textMuted}
                                     keyboardType="phone-pad"
-                                    editable={!isLocked}
                                 />
                             </View>
                         </View>
@@ -638,21 +525,19 @@ export default function VerificationScreen({ navigation }: any) {
                 </View>
 
                 {/* Save Button */}
-                {!isLocked && (
-                    <View style={styles.buttonContainer}>
-                        <TouchableOpacity
-                            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-                            onPress={handleSave}
-                            disabled={saving}
-                        >
-                            {saving ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <Text style={styles.saveButtonText}>Save Verification Info</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                )}
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity
+                        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                        onPress={handleSave}
+                        disabled={saving}
+                    >
+                        {saving ? (
+                            <ActivityIndicator size="small" color="white" />
+                        ) : (
+                            <Text style={styles.saveButtonText}>Save Verification Info</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -694,11 +579,6 @@ const styles = StyleSheet.create({
         borderColor: COLORS.primary,
         backgroundColor: COLORS.primaryLight,
     },
-    typeCardDisabled: {
-        opacity: 0.5,
-        backgroundColor: '#f3f4f6',
-        borderColor: COLORS.border,
-    },
     typeTitle: {
         fontSize: 16,
         fontWeight: '700',
@@ -736,10 +616,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: COLORS.text,
     },
-    inputDisabled: {
-        backgroundColor: '#f3f4f6',
-        color: COLORS.textMuted,
-    },
     textArea: {
         minHeight: 80,
         paddingTop: SPACING.md,
@@ -760,10 +636,6 @@ const styles = StyleSheet.create({
     legalFormOptionActive: {
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
-    },
-    legalFormOptionDisabled: {
-        opacity: 0.5,
-        backgroundColor: '#f3f4f6',
     },
     legalFormText: {
         fontSize: 14,
@@ -792,10 +664,6 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         borderColor: COLORS.primary,
     },
-    checkboxDisabled: {
-        opacity: 0.5,
-        backgroundColor: '#e5e7eb',
-    },
     checkboxLabel: {
         fontSize: 14,
         fontWeight: '600',
@@ -814,11 +682,6 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.md,
         padding: SPACING.md,
         borderStyle: 'dashed',
-    },
-    uploadButtonDisabled: {
-        opacity: 0.5,
-        backgroundColor: '#f3f4f6',
-        borderColor: COLORS.border,
     },
     uploadButtonText: {
         fontSize: 14,
@@ -880,21 +743,7 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         marginTop: SPACING.md,
+        fontSize: 16,
         color: COLORS.textMuted,
     },
-    lockedBanner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f3f4f6',
-        padding: SPACING.sm,
-        borderRadius: RADIUS.sm,
-        marginTop: SPACING.md,
-        gap: SPACING.sm,
-    },
-    lockedText: {
-        fontSize: 12,
-        color: COLORS.textMuted,
-        flex: 1,
-    },
-
 });

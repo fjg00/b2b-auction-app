@@ -283,14 +283,14 @@ export async function uploadVerificationDocument(
     const filePath = `verification/${userId}/${documentType}/${Date.now()}_${fileName}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('verification-documents')
+        .from('documents')
         .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
     // Get public URL
     const { data: urlData } = supabase.storage
-        .from('verification-documents')
+        .from('documents')
         .getPublicUrl(filePath);
 
     // Create database record
@@ -390,7 +390,6 @@ export interface BusinessVerificationData {
     registered_business_address?: string;
     official_email?: string;
     support_phone?: string;
-    business_verification_status?: 'pending' | 'under_review' | 'verified' | 'rejected';
 }
 
 export async function updateBusinessVerification(userId: string, verificationData: BusinessVerificationData) {
@@ -427,8 +426,7 @@ export async function getBusinessVerification(userId: string): Promise<BusinessV
             vat_certificate_url,
             registered_business_address,
             official_email,
-            support_phone,
-            business_verification_status
+            support_phone
         `)
         .eq('id', userId)
         .single();
@@ -446,14 +444,14 @@ export async function uploadBusinessDocument(
     const filePath = `business_verification/${userId}/${documentType}/${Date.now()}_${fileName}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('verification-documents')
+        .from('documents')
         .upload(filePath, file);
 
     if (uploadError) throw uploadError;
 
     // Get public URL
     const { data: urlData } = supabase.storage
-        .from('verification-documents')
+        .from('documents')
         .getPublicUrl(filePath);
 
     // Update user record with document URL

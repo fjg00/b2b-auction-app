@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { LotCard } from '../components/LotCard';
-import { CompletedTransactionCard } from '../components/CompletedTransactionCard';
 import { fetchMyBids, fetchMyTransactions } from '../services/auctionService';
 import { Lot, Transaction } from '@shared/types';
 import { useAuth } from '../context/AuthContext';
@@ -59,11 +58,7 @@ export default function MyBidsScreen({ navigation }: any) {
     };
 
     const handleTransactionPress = (transaction: Transaction) => {
-        if (transaction.status === 'handed_over') {
-            navigation.navigate('Invoice', { transactionId: transaction.id });
-        } else {
-            navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
-        }
+        navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
     };
 
     const renderTab = (tab: Tab, label: string) => (
@@ -101,21 +96,6 @@ export default function MyBidsScreen({ navigation }: any) {
                         } else {
                             const tx = item as unknown as Transaction;
                             if (!tx.lot) return null;
-
-                            if (activeTab === 'history') {
-                                return (
-                                    <CompletedTransactionCard
-                                        title={tx.lot.title}
-                                        amount={tx.amount}
-                                        currency={tx.currency}
-                                        date={tx.updatedAt}
-                                        otherPartyName={tx.seller?.name || 'Seller'}
-                                        transactionId={tx.id}
-                                        role="buyer"
-                                        onPress={() => handleTransactionPress(tx)}
-                                    />
-                                );
-                            }
 
                             const { label, color } = getStatusDetails(tx.status);
 
