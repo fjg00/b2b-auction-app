@@ -22,7 +22,7 @@ export default function CreateLotScreen({ navigation, route }: any) {
         deliveryMethod: 'Pickup',
         startBid: '',
         buyNow: '',
-        duration: '3 Days',
+        duration: '7', // Default to 7 days
     });
 
     // Picker State
@@ -70,7 +70,7 @@ export default function CreateLotScreen({ navigation, route }: any) {
                 deliveryMethod: editingLot.details?.deliveryMethod || 'Pickup',
                 startBid: editingLot.currentBid?.toString() || '',
                 buyNow: editingLot.buyNowPrice?.toString() || '',
-                duration: '7 Days', // Default for relist
+                duration: '7', // Default for relist
             });
         }
     }, [user, editingLot]);
@@ -88,11 +88,14 @@ export default function CreateLotScreen({ navigation, route }: any) {
 
         setSubmitting(true);
         try {
+            const durationDays = parseInt(formData.duration) || 7;
+            const submissionData = { ...formData, durationDays };
+
             let result;
             if (editingLot) {
-                result = await updateAndRelistLot(editingLot.id, formData);
+                result = await updateAndRelistLot(editingLot.id, submissionData);
             } else {
-                result = await createLot(formData, user.id);
+                result = await createLot(submissionData, user.id);
             }
 
             if (result.success) {
@@ -248,11 +251,13 @@ export default function CreateLotScreen({ navigation, route }: any) {
                         onChangeText={t => handleChange('buyNow', t)}
                     />
 
-                    <Text style={styles.label}>Duration</Text>
+                    <Text style={styles.label}>Duration (Days)</Text>
                     <TextInput
                         style={styles.input}
+                        placeholder="e.g., 7"
+                        keyboardType="numeric"
                         value={formData.duration}
-                        editable={false}
+                        onChangeText={t => handleChange('duration', t)}
                     />
                 </View>
 
