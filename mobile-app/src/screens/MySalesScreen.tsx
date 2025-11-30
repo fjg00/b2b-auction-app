@@ -176,7 +176,7 @@ export default function MySalesScreen({ navigation }: any) {
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.tabs}>
+            <View style={styles.tabContainer}>
                 {['active', 'sold', 'completed', 'unsold'].map((tab) => (
                     <TouchableOpacity
                         key={tab}
@@ -251,18 +251,18 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 14,
     },
-    tabs: {
+    tabContainer: {
         flexDirection: 'row',
-        padding: SPACING.sm,
+        padding: SPACING.md,
         backgroundColor: COLORS.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: COLORS.border,
+        gap: SPACING.md,
     },
     tab: {
         flex: 1,
         paddingVertical: SPACING.sm,
         alignItems: 'center',
-        borderRadius: RADIUS.sm,
+        borderRadius: RADIUS.full,
+        backgroundColor: COLORS.background,
     },
     activeTab: {
         backgroundColor: COLORS.primary,
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     tabText: {
         color: COLORS.textMuted,
         fontWeight: '600',
-        fontSize: 16, // Increased from 14
+        fontSize: 14,
     },
     activeTabText: {
         color: 'white',
@@ -293,18 +293,16 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.border,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
     },
     completedContent: {
-        flex: 1,
+        gap: 8,
     },
     completedTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.text,
-        marginBottom: 4,
+        flex: 1,
+        marginRight: 8,
     },
     completedPrice: {
         fontSize: 18,
@@ -317,15 +315,16 @@ const styles = StyleSheet.create({
         color: COLORS.textMuted,
     },
     invoiceBadge: {
-        backgroundColor: '#D1FAE5',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: RADIUS.full,
+        backgroundColor: '#F3F4F6',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 4,
     },
     invoiceText: {
-        color: '#059669',
-        fontSize: 13, // Increased from 12
+        fontSize: 10,
+        color: COLORS.textMuted,
         fontWeight: '600',
+        textTransform: 'uppercase',
     },
     relistButton: {
         marginTop: SPACING.sm,
@@ -343,14 +342,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        marginBottom: 4,
     },
     detailText: {
         fontSize: 12,
         color: COLORS.textMuted,
     },
     priceText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
         color: COLORS.primary,
     },
