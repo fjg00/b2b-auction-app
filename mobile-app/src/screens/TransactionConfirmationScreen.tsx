@@ -454,14 +454,14 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.primaryButton, styles.disabledButton]}
+                        style={[styles.primaryButton, styles.disabledButton, { marginBottom: SPACING.xl }]}
                         disabled={true}
                     >
                         <Text style={styles.primaryButtonText}>Confirm Payment Received</Text>
                     </TouchableOpacity>
 
                     {/* Seller's Bank Details Reference */}
-                    <View style={styles.bankDetails}>
+                    <View style={[styles.bankDetails, { marginBottom: SPACING.xl }]}>
                         <Text style={styles.sectionHeader}>Your Bank Details (Reference)</Text>
                         <View style={styles.detailRow}>
                             <Text style={styles.detailLabel}>Bank Name</Text>
