@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
+import { supabase } from '../lib/supabase';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { CreditCard, Truck, MessageSquare, Clock, AlertTriangle, X } from 'lucide-react-native';
 
@@ -13,58 +14,104 @@ import { SellerPayoutDetailsCard } from '../components/seller-transaction/Seller
 import { SellerDocumentsCard } from '../components/seller-transaction/SellerDocumentsCard';
 
 export default function TransactionScreen({ route, navigation }: any) {
-    const { lotId, role = 'buyer' } = route.params || {};
+    const { transactionId, role = 'buyer' } = route.params || {};
     const [activeTab, setActiveTab] = useState<'payment' | 'logistics'>('payment');
     const [chatOpen, setChatOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(1); // Mock unread count
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [transaction, setTransaction] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
-    // Mock Data
-    const transaction = {
-        id: 'TX-12345',
-        lotTitle: 'Mixed Beverages (48 units)',
-        amount: 1250.00,
-        status: 'awaiting_payment',
-        seller: 'Global Distributors Inc.',
-        dueDate: 'Nov 22, 2025',
+    useEffect(() => {
+        fetchTransaction();
+    }, [transactionId]);
+
+    const fetchTransaction = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('transactions')
+                .select(`
+                    *,
+                    lot:lots(title, seller_id, end_time),
+                    seller:users!seller_id(full_name, company_name),
+                    buyer:users!buyer_id(full_name, company_name)
+                `)
+                .eq('id', transactionId)
+                .single();
+
+            if (error) throw error;
+
+            console.log('Fetched Transaction:', data);
+            console.log('Transaction Status:', data.status);
+
+            // Transform to match UI expectation
+            setTransaction({
+                id: data.id,
+                lotTitle: data.lot?.title || 'Unknown Item',
+                amount: data.amount,
+                status: data.status,
+                seller: data.seller?.company_name || data.seller?.full_name || 'Unknown Seller',
+                dueDate: new Date(new Date(data.created_at).getTime() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString(), // Mock due date logic
+                created_at: data.created_at,
+                buyerName: data.buyer?.full_name,
+                buyerCompany: data.buyer?.company_name
+            });
+        } catch (error) {
+            console.error('Error fetching transaction:', error);
+            Alert.alert('Error', 'Failed to load transaction details');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Mock Data for Seller View
+    if (loading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+        );
+    }
+
+    if (!transaction) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <Text>Transaction not found</Text>
+            </View>
+        );
+    }
+
+    // Mock Data for Seller View (Partially hydrated with real data for now)
     const sellerTransaction = {
-        transactionId: 'TX-12345',
-        auctionId: '13452',
-        itemTitle: 'Mixed Beverages',
-        itemQuantity: 48,
-        unitPrice: 26.04,
-        buyerName: 'John Doe',
-        buyerCompany: 'Retail King LLC',
-        netPayout: 1456.88,
+        transactionId: transaction.id,
+        auctionId: 'N/A',
+        itemTitle: transaction.lotTitle,
+        itemQuantity: 1, // Placeholder
+        unitPrice: transaction.amount,
+        buyerName: transaction.buyerName || 'Unknown',
+        buyerCompany: transaction.buyerCompany || 'Unknown',
+        netPayout: transaction.amount * 0.9, // Mock calc
         payoutMethod: 'Bank Transfer',
-        payoutDate: 'Nov 25, 2025',
-        status: 'READY_FOR_RELEASE' as const,
-        winningBid: 1250.00,
-        buyerPremium: 62.50,
+        payoutDate: 'Pending',
+        status: transaction.status,
+        winningBid: transaction.amount,
+        buyerPremium: transaction.amount * 0.05,
         platformFee: 0.00,
-        vat: 144.38,
+        vat: transaction.amount * 0.11,
         currency: 'USD',
         timeline: [
-            { id: '1', label: 'Auction closed', date: 'Nov 20, 10:00 AM', status: 'completed' as const },
-            { id: '2', label: 'Buyer payment initiated', date: 'Nov 20, 11:30 AM', status: 'completed' as const },
-            { id: '3', label: 'Payment verified', date: 'Nov 21, 09:00 AM', status: 'completed' as const },
-            { id: '4', label: 'Seller confirm goods', status: 'current' as const },
-            { id: '5', label: 'Goods handed over', status: 'pending' as const },
-            { id: '6', label: 'Payout sent', status: 'pending' as const },
+            { id: '1', label: 'Auction closed', date: new Date(transaction.created_at).toLocaleString(), status: 'completed' as const },
+            { id: '2', label: 'Transaction Created', date: new Date(transaction.created_at).toLocaleString(), status: 'completed' as const },
         ],
         logistics: {
             mode: 'pickup' as const,
-            pickupLocation: '123 Warehouse Blvd, Logistics City, NY 10001',
-            pickupWindow: 'Nov 22 - Nov 24, 9 AM - 5 PM',
+            pickupLocation: 'Beirut Warehouse',
+            pickupWindow: 'Pending',
         },
         payoutDetails: {
             method: 'Bank Transfer',
             bankName: 'Bank Audi',
-            accountName: 'Global Distributors Inc.',
+            accountName: transaction.seller,
             maskedAccount: '**** 9114',
-            expectedDate: 'Nov 25, 2025',
+            expectedDate: 'Pending',
         }
     };
 
@@ -329,52 +376,87 @@ export default function TransactionScreen({ route, navigation }: any) {
     );
 
     // RENDER SELLER VIEW
+    const isTxCompleted = transaction.status === 'completed' || transaction.status === 'handed_over';
+
     if (role === 'seller') {
         return (
             <>
                 <ScrollView
-                    style={styles.container}
+                    style={[styles.container, isTxCompleted && styles.completedContainer]}
+                    contentContainerStyle={isTxCompleted ? styles.completedContent : null}
                     keyboardDismissMode="on-drag"
                 >
-                    <SellerTransactionHeader
-                        {...sellerTransaction}
-                        onBack={() => navigation.goBack()}
-                        onChatPress={handleOpenChat}
-                        unreadCount={unreadCount}
-                    />
+                    {isTxCompleted ? (
+                        <View style={styles.completedView}>
+                            <View style={styles.completedBadge}>
+                                <Text style={styles.completedText}>Transaction Completed</Text>
+                            </View>
+                            <Text style={styles.completedSubtext}>
+                                This transaction has been finalized. You can download the seller statement below.
+                            </Text>
 
-                    <SellerTimeline events={sellerTransaction.timeline} />
+                            <TouchableOpacity
+                                style={styles.invoiceButton}
+                                onPress={() => Alert.alert('Download', 'Downloading Seller Statement...')}
+                            >
+                                <Text style={styles.invoiceButtonText}>📄 Download Seller Statement</Text>
+                            </TouchableOpacity>
 
-                    <SellerPayoutSummary
-                        winningBid={sellerTransaction.winningBid}
-                        buyerPremium={sellerTransaction.buyerPremium}
-                        platformFee={sellerTransaction.platformFee}
-                        vat={sellerTransaction.vat}
-                        netPayout={sellerTransaction.netPayout}
-                        currency={sellerTransaction.currency}
-                    />
+                            <View style={[styles.contentCard, { opacity: 0.7, marginTop: SPACING.lg }]}>
+                                <Text style={styles.sectionHeader}>Payout Summary</Text>
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.detailLabel}>Net Payout</Text>
+                                    <Text style={styles.detailValue}>USD ${sellerTransaction.netPayout.toFixed(2)}</Text>
+                                </View>
+                                <View style={styles.detailRow}>
+                                    <Text style={styles.detailLabel}>Date</Text>
+                                    <Text style={styles.detailValue}>{new Date().toLocaleDateString()}</Text>
+                                </View>
+                            </View>
+                        </View>
+                    ) : (
+                        <>
+                            <SellerTransactionHeader
+                                {...sellerTransaction}
+                                onBack={() => navigation.goBack()}
+                                onChatPress={handleOpenChat}
+                                unreadCount={unreadCount}
+                            />
 
-                    <SellerPayoutDetailsCard
-                        {...sellerTransaction.payoutDetails}
-                    />
+                            <SellerTimeline events={sellerTransaction.timeline} />
 
-                    <SellerDocumentsCard
-                        onDownloadInvoice={() => Alert.alert('Download', 'Downloading Buyer Invoice...')}
-                        onDownloadStatement={() => Alert.alert('Download', 'Downloading Seller Statement...')}
-                        onDownloadReleaseNote={() => Alert.alert('Download', 'Downloading Release Note...')}
-                    />
+                            <SellerPayoutSummary
+                                winningBid={sellerTransaction.winningBid}
+                                buyerPremium={sellerTransaction.buyerPremium}
+                                platformFee={sellerTransaction.platformFee}
+                                vat={sellerTransaction.vat}
+                                netPayout={sellerTransaction.netPayout}
+                                currency={sellerTransaction.currency}
+                            />
 
-                    <SellerFulfillmentCard
-                        status={sellerTransaction.status}
-                        onConfirmReady={() => Alert.alert('Success', 'Goods confirmed ready!')}
-                        onReportIssue={() => Alert.alert('Report Issue', 'Opening issue report...')}
-                    />
+                            <SellerPayoutDetailsCard
+                                {...sellerTransaction.payoutDetails}
+                            />
 
-                    <SellerLogisticsCard
-                        mode={sellerTransaction.logistics.mode}
-                        pickupLocation={sellerTransaction.logistics.pickupLocation}
-                        pickupWindow={sellerTransaction.logistics.pickupWindow}
-                    />
+                            <SellerDocumentsCard
+                                onDownloadInvoice={() => Alert.alert('Download', 'Downloading Buyer Invoice...')}
+                                onDownloadStatement={() => Alert.alert('Download', 'Downloading Seller Statement...')}
+                                onDownloadReleaseNote={() => Alert.alert('Download', 'Downloading Release Note...')}
+                            />
+
+                            <SellerFulfillmentCard
+                                status={sellerTransaction.status}
+                                onConfirmReady={() => Alert.alert('Success', 'Goods confirmed ready!')}
+                                onReportIssue={() => Alert.alert('Report Issue', 'Opening issue report...')}
+                            />
+
+                            <SellerLogisticsCard
+                                mode={sellerTransaction.logistics.mode}
+                                pickupLocation={sellerTransaction.logistics.pickupLocation}
+                                pickupWindow={sellerTransaction.logistics.pickupWindow}
+                            />
+                        </>
+                    )}
                 </ScrollView>
                 {renderChatBottomSheet()}
             </>
@@ -382,13 +464,16 @@ export default function TransactionScreen({ route, navigation }: any) {
     }
 
     // RENDER BUYER VIEW (Existing)
+
+
     return (
         <>
             <ScrollView
-                style={styles.container}
+                style={[styles.container, isTxCompleted && styles.completedContainer]}
+                contentContainerStyle={isTxCompleted ? styles.completedContent : null}
                 keyboardDismissMode="on-drag"
             >
-                <View style={styles.header}>
+                <View style={[styles.header, isTxCompleted && { opacity: 0.6 }]}>
                     <View style={styles.headerLeft}>
                         <Text style={styles.title}>Transaction #{transaction.id}</Text>
                         <Text style={styles.subtitle}>{transaction.lotTitle}</Text>
@@ -407,13 +492,45 @@ export default function TransactionScreen({ route, navigation }: any) {
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.tabsContainer}>
-                    {renderTabButton('payment', 'Payment', <CreditCard size={18} color={activeTab === 'payment' ? COLORS.primary : COLORS.textMuted} />)}
-                    {renderTabButton('logistics', 'Logistics', <Truck size={18} color={activeTab === 'logistics' ? COLORS.primary : COLORS.textMuted} />)}
-                </View>
+                {isTxCompleted ? (
+                    <View style={styles.completedView}>
+                        <View style={styles.completedBadge}>
+                            <Text style={styles.completedText}>Transaction Completed</Text>
+                        </View>
+                        <Text style={styles.completedSubtext}>
+                            This transaction has been finalized. You can download your invoice below.
+                        </Text>
 
-                {activeTab === 'payment' && renderPaymentTab()}
-                {activeTab === 'logistics' && renderLogisticsTab()}
+                        <TouchableOpacity
+                            style={styles.invoiceButton}
+                            onPress={() => navigation.navigate('Invoice', { transactionId: transaction.id })}
+                        >
+                            <Text style={styles.invoiceButtonText}>📄 Download Official Invoice</Text>
+                        </TouchableOpacity>
+
+                        <View style={[styles.contentCard, { opacity: 0.7, marginTop: SPACING.lg }]}>
+                            <Text style={styles.sectionHeader}>Summary</Text>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Total Paid</Text>
+                                <Text style={styles.detailValue}>USD ${transaction.amount.toFixed(2)}</Text>
+                            </View>
+                            <View style={styles.detailRow}>
+                                <Text style={styles.detailLabel}>Date</Text>
+                                <Text style={styles.detailValue}>{transaction.dueDate}</Text>
+                            </View>
+                        </View>
+                    </View>
+                ) : (
+                    <>
+                        <View style={styles.tabsContainer}>
+                            {renderTabButton('payment', 'Payment', <CreditCard size={18} color={activeTab === 'payment' ? COLORS.primary : COLORS.textMuted} />)}
+                            {renderTabButton('logistics', 'Logistics', <Truck size={18} color={activeTab === 'logistics' ? COLORS.primary : COLORS.textMuted} />)}
+                        </View>
+
+                        {activeTab === 'payment' && renderPaymentTab()}
+                        {activeTab === 'logistics' && renderLogisticsTab()}
+                    </>
+                )}
             </ScrollView>
 
             {renderChatBottomSheet()}
@@ -793,18 +910,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: COLORS.textMuted,
         textAlign: 'center',
-        marginTop: SPACING.md,
-        fontStyle: 'italic',
-    },
-    supportSection: {
-        marginTop: SPACING.lg,
-        paddingTop: SPACING.md,
-        borderTopWidth: 1,
-        borderTopColor: COLORS.border,
-        gap: 4,
-    },
-    supportText: {
-        fontSize: 11,
         color: COLORS.textMuted,
         textAlign: 'center',
     },

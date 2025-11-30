@@ -650,17 +650,59 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
                 This transaction has been successfully completed. The goods have been handed over and the transaction is now closed.
             </Text>
 
+            {/* Download Buttons */}
+            <View style={{ marginVertical: SPACING.lg }}>
+                {role === 'buyer' ? (
+                    <TouchableOpacity
+                        style={[styles.primaryButton, { backgroundColor: COLORS.primary, marginBottom: SPACING.sm }]}
+                        onPress={() => navigation.navigate('Invoice', { transactionId: transaction.id })}
+                    >
+                        <FileText size={20} color="white" style={{ marginRight: 8 }} />
+                        <Text style={styles.primaryButtonText}>Download Official Invoice</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <TouchableOpacity
+                        style={[styles.primaryButton, { backgroundColor: COLORS.primary, marginBottom: SPACING.sm }]}
+                        onPress={() => Alert.alert('Download', 'Downloading Seller Statement...')}
+                    >
+                        <FileText size={20} color="white" style={{ marginRight: 8 }} />
+                        <Text style={styles.primaryButtonText}>Download Seller Statement</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Transaction Details Summary */}
+            <Text style={styles.sectionHeader}>Summary</Text>
+
             <View style={styles.infoBox}>
                 <Text style={styles.infoLabel}>Transaction ID</Text>
                 <Text style={styles.infoValue}>{transaction.id.slice(0, 8)}</Text>
+
                 <Text style={styles.infoLabel}>Completed On</Text>
                 <Text style={styles.infoValue}>{new Date(transaction.updatedAt).toLocaleDateString()}</Text>
-                <Text style={styles.infoLabel}>Final Amount</Text>
-                <Text style={styles.infoValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+
+                <Text style={styles.infoLabel}>{role === 'buyer' ? 'Seller' : 'Buyer'}</Text>
+                <TouchableOpacity onPress={() => Alert.alert('Navigate to Profile', role === 'buyer' ? transaction.seller?.name : transaction.buyer?.name)}>
+                    <Text style={styles.linkValue}>{role === 'buyer' ? transaction.seller?.name : transaction.buyer?.name}</Text>
+                </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionHeader}>Financials</Text>
+            <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Winning Bid</Text>
+                <Text style={styles.detailValue}>{transaction.currency} ${transaction.amount.toLocaleString()}</Text>
+            </View>
+            <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Total {role === 'buyer' ? 'Paid' : 'Payout'}</Text>
+                <Text style={[styles.detailValue, { color: COLORS.primary, fontWeight: 'bold' }]}>
+                    {transaction.currency} ${transaction.amount.toLocaleString()}
+                </Text>
             </View>
 
             <TouchableOpacity
-                style={[styles.primaryButton, { backgroundColor: COLORS.border }]}
+                style={[styles.primaryButton, { backgroundColor: COLORS.border, marginTop: SPACING.xl }]}
                 onPress={() => navigation.goBack()}
             >
                 <Text style={[styles.primaryButtonText, { color: COLORS.text }]}>Back to {role === 'seller' ? 'Sales' : 'Purchases'}</Text>

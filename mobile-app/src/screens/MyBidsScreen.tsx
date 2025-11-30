@@ -129,6 +129,22 @@ export default function MyBidsScreen({ navigation }: any) {
                             const tx = item as unknown as Transaction;
                             if (!tx.lot) return null;
 
+                            if (activeTab === 'history') {
+                                return (
+                                    <TouchableOpacity
+                                        style={styles.completedCard}
+                                        onPress={() => navigation.navigate('Invoice', { transactionId: tx.id })}
+                                    >
+                                        <View style={styles.completedContent}>
+                                            <Text style={styles.completedTitle}>{tx.lot.title}</Text>
+                                            <View style={styles.invoiceBadge}>
+                                                <Text style={styles.invoiceText}>Invoice Available</Text>
+                                            </View>
+                                        </View>
+                                    </TouchableOpacity>
+                                );
+                            }
+
                             const { label, color } = getStatusDetails(tx.status);
 
                             return (
@@ -220,5 +236,33 @@ const styles = StyleSheet.create({
     list: {
         padding: SPACING.md,
         flexGrow: 1,
+    },
+    completedCard: {
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.md,
+        padding: SPACING.md,
+        marginBottom: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    completedContent: {
+        gap: 8,
+    },
+    completedTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.text,
+    },
+    invoiceBadge: {
+        backgroundColor: '#F3F4F6',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        alignSelf: 'flex-start',
+    },
+    invoiceText: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+        fontWeight: '500',
     },
 });

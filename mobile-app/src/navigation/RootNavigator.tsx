@@ -74,6 +74,7 @@ import AddressesScreen from '../screens/AddressesScreen';
 import TransactionConfirmationScreen from '../screens/TransactionConfirmationScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import InvoiceScreen from '../screens/InvoiceScreen';
 import { supabase } from '../lib/supabase';
 import { useEffect } from 'react';
 import { registerForPushNotificationsAsync } from '../services/NotificationService';
@@ -231,6 +232,13 @@ export default function RootNavigator() {
                         <Stack.Screen
                             name="ResetPassword"
                             component={ResetPasswordScreen}
+                            options={{
+                                headerShown: false,
+                            }}
+                        />
+                        <Stack.Screen
+                            name="Invoice"
+                            component={InvoiceScreen}
                             options={{
                                 headerShown: false,
                             }}

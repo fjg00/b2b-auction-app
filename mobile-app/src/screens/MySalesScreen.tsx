@@ -39,15 +39,17 @@ export default function MySalesScreen({ navigation }: any) {
 
     const handlePress = async (item: Lot) => {
         if (item.status === 'won') {
-            // Fetch the transaction for this lot
             const { getTransactionByLotId } = require('../services/auctionService');
             const transaction = await getTransactionByLotId(item.id, user!.id);
 
             if (transaction?.id) {
-                navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
+                if (item.transactionStatus === 'handed_over') {
+                    navigation.navigate('Invoice', { transactionId: transaction.id });
+                } else {
+                    navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
+                }
             } else {
-                // If backend hasn't processed it yet (rare race condition), show a message
-                Alert.alert('Processing', 'This auction just ended. Please wait a moment for the transaction to be generated.');
+                Alert.alert('Processing', 'Transaction generating...');
             }
         } else {
             navigation.navigate('ItemDetails', { id: item.id, isSeller: true });
@@ -126,9 +128,28 @@ export default function MySalesScreen({ navigation }: any) {
                 <FlatList
                     data={filteredSales}
                     keyExtractor={item => item.id}
-                    renderItem={({ item }) => (
-                        <SellerLotCard lot={item} onPress={() => handlePress(item)} />
-                    )}
+                    renderItem={({ item }) => {
+                        if (activeTab === 'completed') {
+                            return (
+                                <TouchableOpacity
+                                    style={styles.completedCard}
+                                    onPress={() => {
+                                        // Fetch transaction ID first (simplified for now, assuming we can get it)
+                                        // For now, we'll use the handlePress logic but redirect
+                                        handlePress(item);
+                                    }}
+                                >
+                                    <View style={styles.completedContent}>
+                                        <Text style={styles.completedTitle}>{item.title}</Text>
+                                        <View style={styles.invoiceBadge}>
+                                            <Text style={styles.invoiceText}>Invoice Available</Text>
+                                        </View>
+                                    </View>
+                                </TouchableOpacity>
+                            );
+                        }
+                        return <SellerLotCard lot={item} onPress={() => handlePress(item)} />;
+                    }}
                     contentContainerStyle={styles.list}
                     showsVerticalScrollIndicator={false}
                 />
@@ -233,5 +254,33 @@ const styles = StyleSheet.create({
         color: COLORS.primary,
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    completedCard: {
+        backgroundColor: COLORS.surface,
+        borderRadius: RADIUS.md,
+        padding: SPACING.md,
+        marginBottom: SPACING.md,
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    completedContent: {
+        gap: 8,
+    },
+    completedTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: COLORS.text,
+    },
+    invoiceBadge: {
+        backgroundColor: '#F3F4F6',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        alignSelf: 'flex-start',
+    },
+    invoiceText: {
+        fontSize: 12,
+        color: COLORS.textMuted,
+        fontWeight: '500',
     },
 });
