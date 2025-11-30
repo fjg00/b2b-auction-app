@@ -83,7 +83,9 @@ export default function SellerProfileScreen({ route, navigation }: any) {
     return (
         <SafeAreaView style={styles.container}>
             <FlatList
-                data={profile.activeLots}
+                data={profile.activeLots.filter(lot =>
+                    lot.status === 'active' && new Date(lot.endTime) > new Date()
+                )}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                     <LotCard

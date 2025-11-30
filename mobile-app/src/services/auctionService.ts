@@ -80,7 +80,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
         // 1. Fetch all bids for this user
         const { data: bids, error } = await supabase
             .from('bids')
-            .select('*, lot:lots(*)')
+            .select('*, lot:lots(*, seller:users!seller_id(full_name, city))')
             .eq('bidder_id', userId)
             .order('created_at', { ascending: false });
 
@@ -130,7 +130,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
                 title: lot.title,
                 image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
                 images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
-                location: 'Beirut, Lebanon',
+                location: lot.seller?.city || 'Beirut, Lebanon',
                 expiryDate: new Date(endTime.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 condition: 'Overstock',
                 currentBid: maxBid,
@@ -141,7 +141,11 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
                 bidsCount: 0,
                 watchCount: 0,
                 description: lot.description,
-                seller: { name: 'Unknown', rating: 5, location: 'Beirut' },
+                seller: {
+                    name: lot.seller?.full_name || 'Unknown Seller',
+                    rating: 5,
+                    location: lot.seller?.city || 'Beirut, Lebanon'
+                },
                 seller_id: lot.seller_id,
                 details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
                 bids: []

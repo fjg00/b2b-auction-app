@@ -223,7 +223,7 @@ export default function ItemDetailsScreen({ route, navigation }: any) {
                                         <Text style={styles.buyNowText}>View Transaction</Text>
                                     </TouchableOpacity>
                                 </>
-                            ) : lot.status === 'active' ? (
+                            ) : (lot.status === 'active' && new Date(lot.endTime) > new Date()) ? (
                                 <>
                                     <Text style={styles.sectionTitle}>Place a Bid</Text>
                                     <View style={styles.bidInfo}>
