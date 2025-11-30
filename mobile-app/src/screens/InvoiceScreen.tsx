@@ -23,8 +23,8 @@ export default function InvoiceScreen({ route, navigation }: any) {
                 .select(`
                     *,
                     lot:lots(title),
-                    seller:users!seller_id(full_name, company_name, email),
-                    buyer:users!buyer_id(full_name, company_name, email)
+                    seller:users!seller_id(full_name, company_name, email, address, city, state, zip_code, country),
+                    buyer:users!buyer_id(full_name, company_name, email, address, city, state, zip_code, country)
                 `)
                 .eq('id', transactionId)
                 .single();
@@ -43,6 +43,18 @@ export default function InvoiceScreen({ route, navigation }: any) {
         if (!transaction) return;
         setGeneratingPdf(true);
 
+        const formatAddress = (user: any) => {
+            const country = user.country === 'USA' ? 'Lebanon' : user.country; // Override default DB value
+            const parts = [
+                user.address,
+                user.city,
+                user.state,
+                user.zip_code,
+                country
+            ].filter(Boolean);
+            return parts.join(', ');
+        };
+
         try {
             const html = `
                 <html>
@@ -50,7 +62,7 @@ export default function InvoiceScreen({ route, navigation }: any) {
                         <style>
                             body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; }
                             .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-                            .company-name { font-size: 24px; font-weight: bold; color: #2563EB; }
+                            .company-name { font-size: 24px; font-weight: bold; color: #0f766e; }
                             .invoice-label { font-size: 12px; color: #6B7280; letter-spacing: 1px; margin-top: 5px; }
                             .invoice-details { text-align: right; }
                             .invoice-number { font-size: 16px; font-weight: bold; }
@@ -70,7 +82,7 @@ export default function InvoiceScreen({ route, navigation }: any) {
                             .total-value { font-size: 14px; font-weight: 500; }
                             .final-total { margin-top: 20px; padding-top: 20px; border-top: 1px solid #E5E7EB; }
                             .final-label { font-size: 16px; font-weight: bold; }
-                            .final-value { font-size: 20px; font-weight: bold; color: #2563EB; }
+                            .final-value { font-size: 20px; font-weight: bold; color: #0f766e; }
                             .footer { margin-top: 60px; text-align: center; font-size: 12px; color: #6B7280; }
                         </style>
                     </head>
@@ -93,11 +105,13 @@ export default function InvoiceScreen({ route, navigation }: any) {
                                 <div class="label">BILLED TO (BUYER)</div>
                                 <div class="value">${transaction.buyer?.company_name || transaction.buyer?.full_name}</div>
                                 <div class="sub-value">${transaction.buyer?.email}</div>
+                                <div class="sub-value">${formatAddress(transaction.buyer || {})}</div>
                             </div>
                             <div class="col" style="text-align: right;">
                                 <div class="label">FROM (SELLER)</div>
                                 <div class="value">${transaction.seller?.company_name || transaction.seller?.full_name}</div>
                                 <div class="sub-value">${transaction.seller?.email}</div>
+                                <div class="sub-value">${formatAddress(transaction.seller || {})}</div>
                             </div>
                         </div>
 

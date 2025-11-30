@@ -133,17 +133,25 @@ export default function MySalesScreen({ navigation }: any) {
                             return (
                                 <TouchableOpacity
                                     style={styles.completedCard}
-                                    onPress={() => {
-                                        // Fetch transaction ID first (simplified for now, assuming we can get it)
-                                        // For now, we'll use the handlePress logic but redirect
-                                        handlePress(item);
-                                    }}
+                                    onPress={() => handlePress(item)}
                                 >
                                     <View style={styles.completedContent}>
-                                        <Text style={styles.completedTitle}>{item.title}</Text>
-                                        <View style={styles.invoiceBadge}>
-                                            <Text style={styles.invoiceText}>Invoice Available</Text>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                            <Text style={styles.completedTitle}>{item.title}</Text>
+                                            <View style={styles.invoiceBadge}>
+                                                <Text style={styles.invoiceText}>Invoice Available</Text>
+                                            </View>
                                         </View>
+
+                                        <View style={styles.detailsRow}>
+                                            <Text style={styles.detailText}>ID: #{item.id.slice(0, 8).toUpperCase()}</Text>
+                                            <Text style={styles.detailText}>•</Text>
+                                            <Text style={styles.detailText}>{new Date((item as any).created_at).toLocaleDateString()}</Text>
+                                        </View>
+
+                                        <Text style={styles.priceText}>
+                                            {(item as any).currency || '$'} {(item as any).current_bid?.toLocaleString() || (item as any).starting_price?.toLocaleString() || '0'}
+                                        </Text>
                                     </View>
                                 </TouchableOpacity>
                             );
@@ -270,17 +278,33 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.text,
+        flex: 1,
+        marginRight: 8,
     },
     invoiceBadge: {
         backgroundColor: '#F3F4F6',
         paddingVertical: 4,
         paddingHorizontal: 8,
         borderRadius: 4,
-        alignSelf: 'flex-start',
     },
     invoiceText: {
+        fontSize: 10,
+        color: COLORS.textMuted,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
+    detailsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    detailText: {
         fontSize: 12,
         color: COLORS.textMuted,
-        fontWeight: '500',
+    },
+    priceText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: COLORS.primary,
     },
 });

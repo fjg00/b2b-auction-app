@@ -136,10 +136,22 @@ export default function MyBidsScreen({ navigation }: any) {
                                         onPress={() => navigation.navigate('Invoice', { transactionId: tx.id })}
                                     >
                                         <View style={styles.completedContent}>
-                                            <Text style={styles.completedTitle}>{tx.lot.title}</Text>
-                                            <View style={styles.invoiceBadge}>
-                                                <Text style={styles.invoiceText}>Invoice Available</Text>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <Text style={styles.completedTitle}>{tx.lot.title}</Text>
+                                                <View style={styles.invoiceBadge}>
+                                                    <Text style={styles.invoiceText}>Invoice Available</Text>
+                                                </View>
                                             </View>
+
+                                            <View style={styles.detailsRow}>
+                                                <Text style={styles.detailText}>ID: #{tx.id.slice(0, 8).toUpperCase()}</Text>
+                                                <Text style={styles.detailText}>•</Text>
+                                                <Text style={styles.detailText}>{new Date(tx.createdAt).toLocaleDateString()}</Text>
+                                            </View>
+
+                                            <Text style={styles.priceText}>
+                                                {tx.currency} {tx.amount.toLocaleString()}
+                                            </Text>
                                         </View>
                                     </TouchableOpacity>
                                 );
@@ -252,17 +264,33 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.text,
+        flex: 1,
+        marginRight: 8,
     },
     invoiceBadge: {
         backgroundColor: '#F3F4F6',
         paddingVertical: 4,
         paddingHorizontal: 8,
         borderRadius: 4,
-        alignSelf: 'flex-start',
     },
     invoiceText: {
+        fontSize: 10,
+        color: COLORS.textMuted,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
+    detailsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    detailText: {
         fontSize: 12,
         color: COLORS.textMuted,
-        fontWeight: '500',
+    },
+    priceText: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: COLORS.primary,
     },
 });

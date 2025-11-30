@@ -242,7 +242,8 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 seller_id: lot.seller_id,
                 details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
                 bids: [],
-                highestBidderId: bidInfo.highestBidderId
+                highestBidderId: bidInfo.highestBidderId,
+                created_at: lot.created_at
             };
         });
     } catch (error) {
