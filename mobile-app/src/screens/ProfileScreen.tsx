@@ -2,12 +2,23 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { User, Settings, LogOut, ChevronRight, CreditCard, Bell, Package, CheckCircle } from 'lucide-react-native';
+import { User, Settings, LogOut, ChevronRight, CreditCard, Bell, Package, CheckCircle, ShieldCheck, AlertTriangle, Lock } from 'lucide-react-native';
 
 import { useAuth } from '../context/AuthContext';
+import { getUserProfile, UserProfile } from '../services/profileService';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ProfileScreen({ navigation }: any) {
     const { user, signOut } = useAuth();
+    const [profile, setProfile] = React.useState<UserProfile | null>(null);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            if (user?.id) {
+                getUserProfile(user.id).then(setProfile).catch(console.error);
+            }
+        }, [user?.id])
+    );
 
     const handleLogout = async () => {
         try {
@@ -27,8 +38,26 @@ export default function ProfileScreen({ navigation }: any) {
                     </View>
                     <Text style={styles.name}>{user?.user_metadata?.full_name || 'User'}</Text>
                     <Text style={styles.email}>{user?.email}</Text>
-                    <View style={styles.badge}>
-                        <Text style={styles.badgeText}>Verified Buyer</Text>
+                    <View style={[
+                        styles.badge,
+                        profile?.business_verification_status === 'verified' ? styles.badgeVerified :
+                            profile?.business_verification_status === 'under_review' ? styles.badgeReview :
+                                profile?.business_verification_status === 'rejected' ? styles.badgeRejected :
+                                    styles.badgePending
+                    ]}>
+                        {profile?.business_verification_status === 'verified' && <ShieldCheck size={12} color="white" style={{ marginRight: 4 }} />}
+                        {profile?.business_verification_status === 'under_review' && <Lock size={12} color="#854d0e" style={{ marginRight: 4 }} />}
+                        {profile?.business_verification_status === 'rejected' && <AlertTriangle size={12} color="white" style={{ marginRight: 4 }} />}
+
+                        <Text style={[
+                            styles.badgeText,
+                            (profile?.business_verification_status === 'under_review' || !profile?.business_verification_status) ? { color: '#854d0e' } : { color: 'white' }
+                        ]}>
+                            {profile?.business_verification_status === 'verified' ? 'Verified Business' :
+                                profile?.business_verification_status === 'under_review' ? 'Under Review' :
+                                    profile?.business_verification_status === 'rejected' ? 'Verification Rejected' :
+                                        'Unverified'}
+                        </Text>
                     </View>
                 </View>
 
@@ -178,6 +207,22 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.md,
         paddingVertical: 4,
         borderRadius: RADIUS.full,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    badgeVerified: {
+        backgroundColor: COLORS.success,
+    },
+    badgeReview: {
+        backgroundColor: '#fef9c3', // yellow-100
+        borderWidth: 1,
+        borderColor: '#fde047', // yellow-300
+    },
+    badgeRejected: {
+        backgroundColor: COLORS.error,
+    },
+    badgePending: {
+        backgroundColor: COLORS.textMuted,
     },
     badgeText: {
         color: 'white',

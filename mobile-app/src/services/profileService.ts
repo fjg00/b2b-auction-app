@@ -21,6 +21,7 @@ export interface UserProfile {
     profile_photo_url?: string;
     is_verified: boolean;
     verification_progress: number;
+    business_verification_status?: 'pending' | 'under_review' | 'verified' | 'rejected';
 }
 
 export async function updateUserProfile(userId: string, profileData: Partial<UserProfile>) {
@@ -38,7 +39,7 @@ export async function updateUserProfile(userId: string, profileData: Partial<Use
 export async function getUserProfile(userId: string): Promise<UserProfile> {
     const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('*, business_verification_status')
         .eq('id', userId)
         .single();
 
