@@ -150,7 +150,7 @@ export default function MyBidsScreen({ navigation }: any) {
                                             </View>
 
                                             <Text style={styles.priceText}>
-                                                {tx.currency} {tx.amount.toLocaleString()}
+                                                {tx.currency} {(tx.amount || 0).toLocaleString()}
                                             </Text>
                                         </View>
                                     </TouchableOpacity>

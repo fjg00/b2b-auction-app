@@ -7,48 +7,47 @@ import { Clock, Eye, Gavel } from 'lucide-react-native';
 interface SellerLotCardProps {
     lot: Lot;
     onPress: () => void;
+    footer?: React.ReactNode;
 }
 
-export function SellerLotCard({ lot, onPress }: SellerLotCardProps) {
+export function SellerLotCard({ lot, onPress, footer }: SellerLotCardProps) {
     const getStatusBadge = () => {
-        if (lot.status === 'won') {
-            // Show transaction status for sold items
-            switch (lot.transactionStatus) {
-                case 'pending_payment':
-                    return (
-                        <View style={[styles.statusBadge, { backgroundColor: '#FEF3C7' }]}>
-                            <Text style={[styles.statusBadgeText, { color: '#D97706' }]}>AWAITING PAYMENT</Text>
-                        </View>
-                    );
-                case 'payment_sent':
-                    return (
-                        <View style={[styles.statusBadge, { backgroundColor: '#DBEAFE' }]}>
-                            <Text style={[styles.statusBadgeText, { color: '#1E40AF' }]}>CONFIRM PAYMENT</Text>
-                        </View>
-                    );
-                case 'completed':
-                    return (
-                        <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
-                            <Text style={[styles.statusBadgeText, { color: '#059669' }]}>AWAITING PICKUP</Text>
-                        </View>
-                    );
-                case 'handed_over':
-                    return (
-                        <View style={[styles.statusBadge, { backgroundColor: '#E5E7EB' }]}>
-                            <Text style={[styles.statusBadgeText, { color: '#6B7280' }]}>COMPLETED</Text>
-                        </View>
-                    );
-                default:
-                    return (
-                        <View style={[styles.statusBadge, { backgroundColor: '#D1FAE5' }]}>
-                            <Text style={[styles.statusBadgeText, { color: '#059669' }]}>SOLD</Text>
-                        </View>
-                    );
-            }
+        if (lot.status === 'won') return null;
+
+        if ((lot.status as any) === 'unsold') {
+            return (
+                <View style={[styles.statusBadge, { backgroundColor: '#FEE2E2' }]}>
+                    <Text style={[styles.statusBadgeText, { color: '#991B1B' }]}>UNSOLD</Text>
+                </View>
+            );
         }
         return (
             <View style={[styles.statusBadge, { backgroundColor: '#E0F2F1' }]}>
                 <Text style={[styles.statusBadgeText, { color: COLORS.primary }]}>ACTIVE</Text>
+            </View>
+        );
+    };
+
+    const renderTransactionStatus = () => {
+        if (lot.status !== 'won') return null;
+
+        let bg, color, text;
+        switch (lot.transactionStatus) {
+            case 'pending_payment':
+                bg = '#FEF3C7'; color = '#D97706'; text = 'AWAITING PAYMENT'; break;
+            case 'payment_sent':
+                bg = '#DBEAFE'; color = '#1E40AF'; text = 'CONFIRM PAYMENT'; break;
+            case 'completed':
+                bg = '#D1FAE5'; color = '#059669'; text = 'AWAITING PICKUP'; break;
+            case 'handed_over':
+                bg = '#E5E7EB'; color = '#6B7280'; text = 'COMPLETED'; break;
+            default:
+                bg = '#D1FAE5'; color = '#059669'; text = 'SOLD';
+        }
+
+        return (
+            <View style={[styles.transactionStatusBadge, { backgroundColor: bg }]}>
+                <Text style={[styles.transactionStatusText, { color }]}>{text}</Text>
             </View>
         );
     };
@@ -87,20 +86,25 @@ export function SellerLotCard({ lot, onPress }: SellerLotCardProps) {
             </View>
 
             <View style={styles.content}>
-                <Text style={styles.title} numberOfLines={2}>
-                    {lot.title}
-                </Text>
-
-                <View style={styles.metaRow}>
-                    <View style={styles.metaItem}>
-                        <Gavel size={14} color={COLORS.textMuted} />
-                        <Text style={styles.metaText}>{lot.bidsCount} bids</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                        <Eye size={14} color={COLORS.textMuted} />
-                        <Text style={styles.metaText}>{lot.watchCount || 0} watching</Text>
-                    </View>
+                <View style={styles.headerRow}>
+                    <Text style={styles.title} numberOfLines={2}>
+                        {lot.title}
+                    </Text>
+                    {renderTransactionStatus()}
                 </View>
+
+                {lot.status !== 'won' && (
+                    <View style={styles.metaRow}>
+                        <View style={styles.metaItem}>
+                            <Gavel size={14} color={COLORS.textMuted} />
+                            <Text style={styles.metaText}>{lot.bidsCount} bids</Text>
+                        </View>
+                        <View style={styles.metaItem}>
+                            <Eye size={14} color={COLORS.textMuted} />
+                            <Text style={styles.metaText}>{lot.watchCount || 0} watching</Text>
+                        </View>
+                    </View>
+                )}
 
                 <View style={styles.priceRow}>
                     <View>
@@ -122,6 +126,8 @@ export function SellerLotCard({ lot, onPress }: SellerLotCardProps) {
                         <Text style={styles.actionHintText}>Tap to manage transaction</Text>
                     </View>
                 )}
+
+                {footer}
             </View>
         </TouchableOpacity>
     );
@@ -168,17 +174,33 @@ const styles = StyleSheet.create({
         borderRadius: RADIUS.sm,
     },
     statusBadgeText: {
-        fontSize: 11,
+        fontSize: 13, // Increased from 11
         fontWeight: 'bold',
     },
     content: {
         padding: SPACING.md,
     },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: SPACING.sm,
+        gap: 8,
+    },
     title: {
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.text,
-        marginBottom: SPACING.sm,
+        flex: 1,
+    },
+    transactionStatusBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: RADIUS.sm,
+    },
+    transactionStatusText: {
+        fontSize: 13, // Increased from 11
+        fontWeight: 'bold',
     },
     metaRow: {
         flexDirection: 'row',

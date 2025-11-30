@@ -199,19 +199,19 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
         // Fetch transactions to verify sold status and get transaction status
         const { data: transactions } = await supabase
             .from('transactions')
-            .select('lot_id, status')
+            .select('id, lot_id, status')
             .in('lot_id', lotIds);
 
-        const transactionsMap = new Map<string, string>();
+        const transactionsMap = new Map<string, { id: string, status: string }>();
         transactions?.forEach((t: any) => {
-            transactionsMap.set(t.lot_id, t.status);
+            transactionsMap.set(t.lot_id, { id: t.id, status: t.status });
         });
 
         const now = new Date();
 
         return lots.map((lot: any) => {
             const bidInfo = bidsMap.get(lot.id) || { maxBid: 0, count: 0 };
-            const transactionStatus = transactionsMap.get(lot.id);
+            const transaction = transactionsMap.get(lot.id);
 
             // Determine if sold:
             // 1. Has a transaction OR
@@ -219,7 +219,7 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
             // 3. Expired AND has at least one bid
             const isExpired = new Date(lot.end_time) < now;
             const hasBids = bidInfo.count > 0;
-            const isSold = !!transactionStatus || lot.status === 'won' || lot.status === 'WON' || (isExpired && hasBids);
+            const isSold = !!transaction || lot.status === 'won' || lot.status === 'WON' || (isExpired && hasBids);
 
             return {
                 id: lot.id,
@@ -234,7 +234,8 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 buyNowPrice: lot.buy_now_price,
                 endTime: new Date(lot.end_time),
                 status: isSold ? 'won' : lot.status.toLowerCase(),
-                transactionStatus: transactionStatus as any,
+                transactionStatus: transaction?.status as any,
+                transactionId: transaction?.id,
                 bidsCount: bidInfo.count,
                 watchCount: 0,
                 description: lot.description,
@@ -618,5 +619,31 @@ export const getTransactionByLotId = async (lotId: string, userId: string): Prom
     } catch (error) {
         console.error('Unexpected error checking transaction existence:', error);
         return undefined;
+    }
+};
+
+export const relistLot = async (lotId: string) => {
+    try {
+        const now = new Date();
+        const endTime = new Date();
+        endTime.setDate(now.getDate() + 7); // Relist for 7 days
+
+        const { data, error } = await supabase
+            .from('lots')
+            .update({
+                status: 'active',
+                start_time: now.toISOString(),
+                end_time: endTime.toISOString(),
+                created_at: now.toISOString() // Optional: reset created_at to show as new
+            })
+            .eq('id', lotId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error relisting lot:', error);
+        throw error;
     }
 };

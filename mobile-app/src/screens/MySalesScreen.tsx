@@ -1,58 +1,65 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, FlatList, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, FlatList, StyleSheet, ActivityIndicator, Text, TouchableOpacity, Alert, Image, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { SellerLotCard } from '../components/SellerLotCard';
-import { fetchMySales } from '../services/auctionService';
+import * as auctionService from '../services/auctionService';
 import { Lot } from '@shared/types';
-import { PlusCircle } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
+import { PlusCircle } from 'lucide-react-native';
+import { SellerLotCard } from '../components/SellerLotCard';
 
 export default function MySalesScreen({ navigation }: any) {
     const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState<'active' | 'sold' | 'completed' | 'unsold'>('active');
     const [sales, setSales] = useState<Lot[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const [activeTab, setActiveTab] = useState<'active' | 'sold' | 'completed'>('active');
-
-    useFocusEffect(
-        useCallback(() => {
-            if (user) {
-                loadSales();
-            }
-        }, [user])
-    );
+    useEffect(() => {
+        loadSales();
+    }, [user]);
 
     const loadSales = async () => {
         if (!user) return;
-        setLoading(true);
         try {
-            const data = await fetchMySales(user.id);
+            const data = await auctionService.fetchMySales(user.id);
             setSales(data);
         } catch (error) {
             console.error('Error loading sales:', error);
+            Alert.alert('Error', 'Failed to load sales');
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
-    const handlePress = async (item: Lot) => {
-        if (item.status === 'won') {
-            const { getTransactionByLotId } = require('../services/auctionService');
-            const transaction = await getTransactionByLotId(item.id, user!.id);
+    const onRefresh = () => {
+        setRefreshing(true);
+        loadSales();
+    };
 
-            if (transaction?.id) {
-                if (item.transactionStatus === 'handed_over') {
-                    navigation.navigate('Invoice', { transactionId: transaction.id });
-                } else {
-                    navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
-                }
-            } else {
-                Alert.alert('Processing', 'Transaction generating...');
-            }
-        } else {
-            navigation.navigate('ItemDetails', { id: item.id, isSeller: true });
+    const handleRelist = async (lotId: string) => {
+        try {
+            Alert.alert(
+                'Relist Item',
+                'Are you sure you want to relist this item for 7 days?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Relist',
+                        onPress: async () => {
+                            setLoading(true);
+                            await auctionService.relistLot(lotId);
+                            await loadSales(); // Reload to see changes
+                            Alert.alert('Success', 'Item relisted successfully');
+                        }
+                    }
+                ]
+            );
+        } catch (error) {
+            Alert.alert('Error', 'Failed to relist item');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -61,21 +68,106 @@ export default function MySalesScreen({ navigation }: any) {
     };
 
     const filteredSales = sales.filter(item => {
-        if (activeTab === 'active') return item.status === 'active';
-        if (activeTab === 'sold') return item.status === 'won' && item.transactionStatus !== 'handed_over';
-        return item.status === 'won' && item.transactionStatus === 'handed_over';
+        const isExpired = new Date(item.endTime) < new Date();
+        const hasBids = (item.bidsCount || 0) > 0;
+        const isSold = item.status === 'won';
+        const isCompleted = item.transactionStatus === 'handed_over';
+
+        if (activeTab === 'active') return !isExpired && !isSold;
+
+        // Sold means won but NOT yet handed over (pending)
+        if (activeTab === 'sold') return isSold && !isCompleted;
+
+        // Completed means won AND handed over
+        if (activeTab === 'completed') return isSold && isCompleted;
+
+        // Unsold means expired AND no bids (and not marked as won)
+        if (activeTab === 'unsold') return isExpired && !hasBids && !isSold;
+
+        return false;
     });
+
+    const renderItem = ({ item }: { item: any }) => {
+        if (activeTab === 'completed') {
+            return (
+                <TouchableOpacity
+                    style={styles.completedCard}
+                    onPress={() => {
+                        if (item.transactionId) {
+                            navigation.navigate('Invoice', { transactionId: item.transactionId });
+                        } else {
+                            Alert.alert('Error', 'Invoice not available yet');
+                        }
+                    }}
+                >
+                    <View style={styles.completedContent}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <Text style={styles.completedTitle}>{item.title}</Text>
+                            <View style={styles.invoiceBadge}>
+                                <Text style={styles.invoiceText}>Invoice Available</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.detailsRow}>
+                            <Text style={styles.detailText}>ID: #{item.transactionId ? item.transactionId.slice(0, 8).toUpperCase() : 'N/A'}</Text>
+                            <Text style={styles.detailText}>•</Text>
+                            <Text style={styles.detailText}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                        </View>
+
+                        <Text style={styles.priceText}>
+                            {item.currency || '$'} {(item.currentBid || 0).toLocaleString()}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+            );
+        }
+
+        // Prepare lot object for SellerLotCard
+        const displayLot = { ...item };
+        if (activeTab === 'unsold') {
+            displayLot.status = 'unsold';
+        } else if (activeTab === 'active') {
+            displayLot.status = 'active';
+        }
+
+        return (
+            <SellerLotCard
+                lot={displayLot}
+                onPress={() => {
+                    if (activeTab === 'sold') {
+                        if (item.transactionId) {
+                            navigation.navigate('TransactionConfirmation', { transactionId: item.transactionId });
+                        } else {
+                            Alert.alert('Processing', 'Transaction is being generated...');
+                        }
+                    } else {
+                        navigation.navigate('ItemDetails', { id: item.id });
+                    }
+                }}
+                footer={
+                    activeTab === 'unsold' ? (
+                        <TouchableOpacity
+                            style={styles.relistButton}
+                            onPress={() => handleRelist(item.id)}
+                        >
+                            <Text style={styles.relistButtonText}>Relist Item</Text>
+                        </TouchableOpacity>
+                    ) : null
+                }
+            />
+        );
+    };
 
     if (loading) {
         return (
-            <View style={styles.center}>
+            <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
             </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>My Sales</Text>
                 <TouchableOpacity style={styles.addButton} onPress={handleCreateLot}>
@@ -84,84 +176,39 @@ export default function MySalesScreen({ navigation }: any) {
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.tabContainer}>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
-                    onPress={() => setActiveTab('active')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>Active Listings</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'sold' && styles.activeTab]}
-                    onPress={() => setActiveTab('sold')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'sold' && styles.activeTabText]}>Sold Items</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={[styles.tab, activeTab === 'completed' && styles.activeTab]}
-                    onPress={() => setActiveTab('completed')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'completed' && styles.activeTabText]}>Completed</Text>
-                </TouchableOpacity>
+            <View style={styles.tabs}>
+                {['active', 'sold', 'completed', 'unsold'].map((tab) => (
+                    <TouchableOpacity
+                        key={tab}
+                        style={[styles.tab, activeTab === tab && styles.activeTab]}
+                        onPress={() => setActiveTab(tab as any)}
+                    >
+                        <Text
+                            style={[
+                                styles.tabText,
+                                activeTab === tab && styles.activeTabText,
+                            ]}
+                        >
+                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
             </View>
 
-            {filteredSales.length === 0 ? (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyTitle}>
-                        {activeTab === 'active' ? 'No active listings' : activeTab === 'sold' ? 'No sold items yet' : 'No completed sales'}
-                    </Text>
-                    <Text style={styles.emptyText}>
-                        {activeTab === 'active'
-                            ? 'Start selling by listing your first item'
-                            : activeTab === 'sold'
-                                ? 'Items you sell will appear here'
-                                : 'Completed transactions will appear here'}
-                    </Text>
-                    {activeTab === 'active' && (
-                        <TouchableOpacity style={styles.emptyButton} onPress={handleCreateLot}>
-                            <PlusCircle size={20} color={COLORS.primary} />
-                            <Text style={styles.emptyButtonText}>List Your First Item</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-            ) : (
-                <FlatList
-                    data={filteredSales}
-                    keyExtractor={item => item.id}
-                    renderItem={({ item }) => {
-                        if (activeTab === 'completed') {
-                            return (
-                                <TouchableOpacity
-                                    style={styles.completedCard}
-                                    onPress={() => handlePress(item)}
-                                >
-                                    <View style={styles.completedContent}>
-                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                            <Text style={styles.completedTitle}>{item.title}</Text>
-                                            <View style={styles.invoiceBadge}>
-                                                <Text style={styles.invoiceText}>Invoice Available</Text>
-                                            </View>
-                                        </View>
-
-                                        <View style={styles.detailsRow}>
-                                            <Text style={styles.detailText}>ID: #{item.id.slice(0, 8).toUpperCase()}</Text>
-                                            <Text style={styles.detailText}>•</Text>
-                                            <Text style={styles.detailText}>{new Date((item as any).created_at).toLocaleDateString()}</Text>
-                                        </View>
-
-                                        <Text style={styles.priceText}>
-                                            {(item as any).currency || '$'} {(item as any).current_bid?.toLocaleString() || (item as any).starting_price?.toLocaleString() || '0'}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        }
-                        return <SellerLotCard lot={item} onPress={() => handlePress(item)} />;
-                    }}
-                    contentContainerStyle={styles.list}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+            <FlatList
+                data={filteredSales}
+                renderItem={renderItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContent}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No items found</Text>
+                    </View>
+                }
+            />
         </SafeAreaView>
     );
 }
@@ -171,7 +218,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: COLORS.background,
     },
-    center: {
+    loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
@@ -181,86 +228,62 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.surface,
         borderBottomWidth: 1,
         borderBottomColor: COLORS.border,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
         color: COLORS.text,
-        marginBottom: SPACING.md,
     },
     addButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
         backgroundColor: COLORS.primary,
-        paddingVertical: SPACING.sm,
-        paddingHorizontal: SPACING.md,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         borderRadius: RADIUS.md,
-        gap: 8,
+        gap: 4,
     },
     addButtonText: {
         color: 'white',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 14,
     },
-    tabContainer: {
+    tabs: {
         flexDirection: 'row',
-        padding: SPACING.md,
+        padding: SPACING.sm,
         backgroundColor: COLORS.surface,
-        gap: SPACING.md,
+        borderBottomWidth: 1,
+        borderBottomColor: COLORS.border,
     },
     tab: {
         flex: 1,
         paddingVertical: SPACING.sm,
         alignItems: 'center',
-        borderRadius: RADIUS.full,
-        backgroundColor: COLORS.background,
+        borderRadius: RADIUS.sm,
     },
     activeTab: {
         backgroundColor: COLORS.primary,
     },
     tabText: {
-        fontWeight: '600',
         color: COLORS.textMuted,
+        fontWeight: '600',
+        fontSize: 16, // Increased from 14
     },
     activeTabText: {
         color: 'white',
     },
-    list: {
+    listContent: {
         padding: SPACING.md,
     },
-    emptyState: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+    emptyContainer: {
         padding: SPACING.xl,
-    },
-    emptyTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: COLORS.text,
-        marginBottom: SPACING.sm,
+        alignItems: 'center',
     },
     emptyText: {
-        fontSize: 14,
         color: COLORS.textMuted,
-        textAlign: 'center',
-        marginBottom: SPACING.lg,
-    },
-    emptyButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        backgroundColor: COLORS.surface,
-        paddingVertical: SPACING.md,
-        paddingHorizontal: SPACING.lg,
-        borderRadius: RADIUS.md,
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-    },
-    emptyButtonText: {
-        color: COLORS.primary,
-        fontWeight: 'bold',
         fontSize: 16,
     },
     completedCard: {
@@ -270,40 +293,64 @@ const styles = StyleSheet.create({
         marginBottom: SPACING.md,
         borderWidth: 1,
         borderColor: COLORS.border,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     completedContent: {
-        gap: 8,
+        flex: 1,
     },
     completedTitle: {
         fontSize: 16,
         fontWeight: '600',
         color: COLORS.text,
-        flex: 1,
-        marginRight: 8,
+        marginBottom: 4,
+    },
+    completedPrice: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.primary,
+        marginBottom: 4,
+    },
+    completedDate: {
+        fontSize: 14,
+        color: COLORS.textMuted,
     },
     invoiceBadge: {
-        backgroundColor: '#F3F4F6',
-        paddingVertical: 4,
-        paddingHorizontal: 8,
-        borderRadius: 4,
+        backgroundColor: '#D1FAE5',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: RADIUS.full,
     },
     invoiceText: {
-        fontSize: 10,
-        color: COLORS.textMuted,
+        color: '#059669',
+        fontSize: 13, // Increased from 12
         fontWeight: '600',
-        textTransform: 'uppercase',
+    },
+    relistButton: {
+        marginTop: SPACING.sm,
+        backgroundColor: COLORS.primary,
+        paddingVertical: SPACING.sm,
+        borderRadius: RADIUS.sm,
+        alignItems: 'center',
+    },
+    relistButtonText: {
+        color: 'white',
+        fontWeight: '600',
+        fontSize: 14,
     },
     detailsRow: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
+        marginBottom: 4,
     },
     detailText: {
         fontSize: 12,
         color: COLORS.textMuted,
     },
     priceText: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: 'bold',
         color: COLORS.primary,
     },
