@@ -40,6 +40,12 @@ export default function TransactionConfirmationScreen({ navigation, route }: any
         }
     }, [transactionId]);
 
+    useEffect(() => {
+        if (route.params?.initialChatOpen) {
+            setChatOpen(true);
+        }
+    }, [route.params?.initialChatOpen]);
+
     const loadTransaction = async () => {
         if (!transactionId) return;
         setLoading(true);

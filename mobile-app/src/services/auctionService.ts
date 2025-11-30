@@ -77,7 +77,7 @@ export const fetchAuctionsFromSupabase = async (userId?: string): Promise<Lot[]>
 
 export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
     try {
-        // Fetch bids for this user, and join the related lot data
+        // 1. Fetch all bids for this user
         const { data: bids, error } = await supabase
             .from('bids')
             .select('*, lot:lots(*)')
@@ -87,7 +87,15 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
         if (error) throw error;
         if (!bids) return [];
 
-        // Group bids by lot_id to find max bid for each lot
+        // 2. Fetch user's transactions to identify purchased items
+        const { data: transactions } = await supabase
+            .from('transactions')
+            .select('lot_id')
+            .eq('buyer_id', userId);
+
+        const purchasedLotIds = new Set(transactions?.map((t: any) => t.lot_id));
+
+        // 3. Group bids by lot_id to find max bid for each lot
         const lotBidsMap = new Map<string, number>();
         bids.forEach((bid: any) => {
             const lotId = bid.lot?.id;
@@ -97,10 +105,22 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
             }
         });
 
-        // Map the joined data to our Lot interface
+        // 4. Map and Filter
+        const now = new Date();
         const lots = bids.map((bid: any) => {
             const lot = bid.lot;
-            if (lot.status !== 'ACTIVE') return null;
+
+            // Filter out invalid lots
+            if (!lot) return null;
+
+            // Filter out purchased items (they belong in "Purchased Items" tab)
+            if (purchasedLotIds.has(lot.id)) return null;
+
+            // Filter out expired lots (auctions that ended)
+            // Note: If the user WON it, it should have a transaction. 
+            // If they didn't win, it's a "lost" auction and should disappear from "Active Bids".
+            const endTime = new Date(lot.end_time);
+            if (endTime < now) return null;
 
             // Get the max bid for this lot
             const maxBid = lotBidsMap.get(lot.id) || lot.start_price;
@@ -111,12 +131,12 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
                 image: 'https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=800&auto=format&fit=crop',
                 images: ['https://images.unsplash.com/photo-1628102491629-778571d893a3?q=80&w=1200&auto=format&fit=crop'],
                 location: 'Beirut, Lebanon',
-                expiryDate: new Date(new Date(lot.end_time).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                expiryDate: new Date(endTime.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 condition: 'Overstock',
                 currentBid: maxBid,
                 minBidIncrement: lot.min_bid_increment,
                 buyNowPrice: lot.buy_now_price,
-                endTime: new Date(lot.end_time),
+                endTime: endTime,
                 status: lot.status.toLowerCase(),
                 bidsCount: 0,
                 watchCount: 0,
@@ -128,7 +148,7 @@ export const fetchMyBids = async (userId: string): Promise<Lot[]> => {
             };
         }).filter(Boolean) as Lot[];
 
-        // Deduplicate lots by ID (since we ordered by created_at desc, the first one is the latest)
+        // Deduplicate lots by ID
         const uniqueLots = Array.from(new Map(lots.map(lot => [lot.id, lot])).values());
 
         return uniqueLots;
@@ -154,16 +174,26 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
         // Fetch bids for these lots
         const { data: allBids } = await supabase
             .from('bids')
-            .select('lot_id, amount')
+            .select('lot_id, amount, bidder_id')
             .in('lot_id', lotIds);
 
-        const bidsMap = new Map<string, { maxBid: number, count: number }>();
+        const bidsMap = new Map<string, { maxBid: number, count: number, highestBidderId?: string }>();
         allBids?.forEach((bid: any) => {
             const current = bidsMap.get(bid.lot_id) || { maxBid: 0, count: 0 };
-            bidsMap.set(bid.lot_id, {
-                maxBid: Math.max(current.maxBid, bid.amount),
-                count: current.count + 1
-            });
+
+            // Update max bid and highest bidder
+            if (bid.amount > current.maxBid) {
+                bidsMap.set(bid.lot_id, {
+                    maxBid: bid.amount,
+                    count: current.count + 1,
+                    highestBidderId: bid.bidder_id
+                });
+            } else {
+                bidsMap.set(bid.lot_id, {
+                    ...current,
+                    count: current.count + 1
+                });
+            }
         });
 
         // Fetch transactions to verify sold status and get transaction status
@@ -177,10 +207,19 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
             transactionsMap.set(t.lot_id, t.status);
         });
 
+        const now = new Date();
+
         return lots.map((lot: any) => {
             const bidInfo = bidsMap.get(lot.id) || { maxBid: 0, count: 0 };
             const transactionStatus = transactionsMap.get(lot.id);
-            const isSold = !!transactionStatus || lot.status === 'won' || lot.status === 'WON';
+
+            // Determine if sold:
+            // 1. Has a transaction OR
+            // 2. Explicitly marked as won OR
+            // 3. Expired AND has at least one bid
+            const isExpired = new Date(lot.end_time) < now;
+            const hasBids = bidInfo.count > 0;
+            const isSold = !!transactionStatus || lot.status === 'won' || lot.status === 'WON' || (isExpired && hasBids);
 
             return {
                 id: lot.id,
@@ -202,7 +241,8 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 seller: { name: 'Me', rating: 5, location: 'Beirut' },
                 seller_id: lot.seller_id,
                 details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
-                bids: []
+                bids: [],
+                highestBidderId: bidInfo.highestBidderId
             };
         });
     } catch (error) {

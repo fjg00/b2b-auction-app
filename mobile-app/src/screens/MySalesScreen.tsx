@@ -46,7 +46,8 @@ export default function MySalesScreen({ navigation }: any) {
             if (transaction?.id) {
                 navigation.navigate('TransactionConfirmation', { transactionId: transaction.id });
             } else {
-                Alert.alert('Error', 'Transaction not found for this item');
+                // If backend hasn't processed it yet (rare race condition), show a message
+                Alert.alert('Processing', 'This auction just ended. Please wait a moment for the transaction to be generated.');
             }
         } else {
             navigation.navigate('ItemDetails', { id: item.id, isSeller: true });

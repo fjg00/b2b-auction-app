@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, FlatList, StyleSheet, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { supabase } from '../lib/supabase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
@@ -17,17 +18,48 @@ export default function MyBidsScreen({ navigation }: any) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useFocusEffect(
-        useCallback(() => {
-            if (user) {
-                loadData();
-            }
-        }, [user, activeTab])
-    );
+    useEffect(() => {
+        if (!user) return;
+
+        loadData();
+
+        // Subscribe to changes in 'bids' table
+        const bidsSubscription = supabase
+            .channel('public:bids')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'bids' },
+                (payload) => {
+                    console.log('Bid change received!', payload);
+                    loadData(); // Reload data on any bid change
+                }
+            )
+            .subscribe();
+
+        // Subscribe to changes in 'transactions' table
+        const transactionsSubscription = supabase
+            .channel('public:transactions')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'transactions' },
+                (payload) => {
+                    console.log('Transaction change received!', payload);
+                    loadData(); // Reload data on any transaction change
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(bidsSubscription);
+            supabase.removeChannel(transactionsSubscription);
+        };
+    }, [user, activeTab]);
 
     const loadData = async () => {
         if (!user) return;
-        setLoading(true);
+        // Don't set loading to true on updates to avoid flickering
+        if (bids.length === 0 && transactions.length === 0) setLoading(true);
+
         try {
             if (activeTab === 'bids') {
                 const data = await fetchMyBids(user.id);

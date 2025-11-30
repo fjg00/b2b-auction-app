@@ -76,6 +76,8 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import { supabase } from '../lib/supabase';
 import { useEffect } from 'react';
+import { registerForPushNotificationsAsync } from '../services/NotificationService';
+import * as Notifications from 'expo-notifications';
 
 export default function RootNavigator() {
     const { session, loading } = useAuth();
@@ -94,6 +96,36 @@ export default function RootNavigator() {
 
         return () => subscription.unsubscribe();
     }, [navigationRef]);
+
+    useEffect(() => {
+        if (session) {
+            registerForPushNotificationsAsync();
+        }
+
+        // Handle notification tap
+        const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+            const data = response.notification.request.content.data;
+
+            if (data?.type === 'new_message' && data?.transactionId) {
+                if (navigationRef.isReady()) {
+                    // @ts-ignore
+                    navigationRef.navigate('TransactionConfirmation', {
+                        transactionId: data.transactionId,
+                        initialChatOpen: true
+                    });
+                }
+            } else if (data?.type === 'auction_won' && data?.transactionId) {
+                if (navigationRef.isReady()) {
+                    // @ts-ignore
+                    navigationRef.navigate('TransactionConfirmation', {
+                        transactionId: data.transactionId
+                    });
+                }
+            }
+        });
+
+        return () => subscription.remove();
+    }, [session, navigationRef]);
 
     if (loading) {
         return (
