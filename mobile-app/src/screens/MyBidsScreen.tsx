@@ -65,13 +65,9 @@ export default function MyBidsScreen({ navigation }: any) {
                 const data = await fetchMyBids(user.id);
                 setBids(data);
             } else {
+                // Fetch all transactions regardless of tab
                 const data = await fetchMyTransactions(user.id);
-                // Filter based on tab
-                if (activeTab === 'purchased') {
-                    setTransactions(data.filter(t => t.status !== 'handed_over'));
-                } else {
-                    setTransactions(data.filter(t => t.status === 'handed_over'));
-                }
+                setTransactions(data);
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -102,6 +98,15 @@ export default function MyBidsScreen({ navigation }: any) {
         </TouchableOpacity>
     );
 
+    // Filter data based on active tab
+    const getDisplayData = () => {
+        if (activeTab === 'bids') return bids;
+        if (activeTab === 'purchased') {
+            return transactions.filter(t => t.status !== 'handed_over');
+        }
+        return transactions.filter(t => t.status === 'handed_over');
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -120,7 +125,7 @@ export default function MyBidsScreen({ navigation }: any) {
                 </View>
             ) : (
                 <FlatList
-                    data={(activeTab === 'bids' ? bids : transactions) as any}
+                    data={getDisplayData() as any}
                     keyExtractor={item => item.id}
                     renderItem={({ item }) => {
                         if (activeTab === 'bids') {
