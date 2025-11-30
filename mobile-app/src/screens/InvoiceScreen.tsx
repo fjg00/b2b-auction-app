@@ -23,8 +23,8 @@ export default function InvoiceScreen({ route, navigation }: any) {
                 .select(`
                     *,
                     lot:lots(title),
-                    seller:users!seller_id(full_name, company_name, email, address, city, state, zip_code, country),
-                    buyer:users!buyer_id(full_name, company_name, email, address, city, state, zip_code, country)
+                    seller:users!seller_id(full_name, company_name, email, address, city, state, zip_code, country, tax_id),
+                    buyer:users!buyer_id(full_name, company_name, email, address, city, state, zip_code, country, tax_id)
                 `)
                 .eq('id', transactionId)
                 .single();
@@ -34,6 +34,7 @@ export default function InvoiceScreen({ route, navigation }: any) {
         } catch (error) {
             console.error('Error fetching invoice:', error);
             Alert.alert('Error', 'Failed to load invoice details');
+            navigation.goBack();
         } finally {
             setLoading(false);
         }
@@ -67,6 +68,16 @@ export default function InvoiceScreen({ route, navigation }: any) {
                             .invoice-details { text-align: right; }
                             .invoice-number { font-size: 16px; font-weight: bold; }
                             .date { font-size: 14px; color: #6B7280; margin-top: 5px; }
+                            .status-badge { 
+                                display: inline-block; 
+                                padding: 4px 12px; 
+                                background-color: #dcfce7; 
+                                color: #166534; 
+                                border-radius: 9999px; 
+                                font-size: 12px; 
+                                font-weight: bold; 
+                                margin-top: 10px;
+                            }
                             .divider { height: 1px; background-color: #E5E7EB; margin: 20px 0; }
                             .row { display: flex; justify-content: space-between; margin-bottom: 20px; }
                             .col { flex: 1; }
@@ -83,6 +94,9 @@ export default function InvoiceScreen({ route, navigation }: any) {
                             .final-total { margin-top: 20px; padding-top: 20px; border-top: 1px solid #E5E7EB; }
                             .final-label { font-size: 16px; font-weight: bold; }
                             .final-value { font-size: 20px; font-weight: bold; color: #0f766e; }
+                            .terms { margin-top: 40px; padding-top: 20px; border-top: 1px solid #E5E7EB; }
+                            .terms-title { font-size: 12px; font-weight: bold; color: #374151; margin-bottom: 8px; }
+                            .terms-text { font-size: 10px; color: #6B7280; line-height: 1.5; }
                             .footer { margin-top: 60px; text-align: center; font-size: 12px; color: #6B7280; }
                         </style>
                     </head>
@@ -95,10 +109,9 @@ export default function InvoiceScreen({ route, navigation }: any) {
                             <div class="invoice-details">
                                 <div class="invoice-number">#${transaction.id.slice(0, 8).toUpperCase()}</div>
                                 <div class="date">${new Date(transaction.created_at).toLocaleDateString()}</div>
+                                <div class="status-badge">PAID</div>
                             </div>
                         </div>
-
-                        <div class="divider"></div>
 
                         <div class="row">
                             <div class="col">
@@ -106,12 +119,14 @@ export default function InvoiceScreen({ route, navigation }: any) {
                                 <div class="value">${transaction.buyer?.company_name || transaction.buyer?.full_name}</div>
                                 <div class="sub-value">${transaction.buyer?.email}</div>
                                 <div class="sub-value">${formatAddress(transaction.buyer || {})}</div>
+                                ${transaction.buyer?.tax_id ? `<div class="sub-value">Tax ID: ${transaction.buyer.tax_id}</div>` : ''}
                             </div>
                             <div class="col" style="text-align: right;">
                                 <div class="label">FROM (SELLER)</div>
                                 <div class="value">${transaction.seller?.company_name || transaction.seller?.full_name}</div>
                                 <div class="sub-value">${transaction.seller?.email}</div>
                                 <div class="sub-value">${formatAddress(transaction.seller || {})}</div>
+                                ${transaction.seller?.tax_id ? `<div class="sub-value">Tax ID: ${transaction.seller.tax_id}</div>` : ''}
                             </div>
                         </div>
 
@@ -123,24 +138,26 @@ export default function InvoiceScreen({ route, navigation }: any) {
                             <div class="item-price">${transaction.currency} ${transaction.amount.toLocaleString()}</div>
                         </div>
 
-                        <div class="divider"></div>
+                        <div class="final-total">
+                            <div class="total-row">
+                                <div class="final-label">TOTAL PAID</div>
+                                <div class="final-value">${transaction.currency} ${transaction.amount.toLocaleString()}</div>
+                            </div>
+                        </div>
 
-                        <div class="total-row">
-                            <div class="total-label">Subtotal</div>
-                            <div class="total-value">${transaction.currency} ${transaction.amount.toLocaleString()}</div>
-                        </div>
-                        <div class="total-row">
-                            <div class="total-label">Fees (0%)</div>
-                            <div class="total-value">${transaction.currency} 0.00</div>
-                        </div>
-                        <div class="total-row final-total">
-                            <div class="final-label">TOTAL PAID</div>
-                            <div class="final-value">${transaction.currency} ${transaction.amount.toLocaleString()}</div>
+                        <div class="terms">
+                            <div class="terms-title">TERMS & CONDITIONS</div>
+                            <div class="terms-text">
+                                1. Payment is due upon receipt of this invoice.<br>
+                                2. All goods are sold "as is" and "where is" without warranty of any kind.<br>
+                                3. Title to the goods shall pass to the buyer upon full payment.<br>
+                                4. Any claims must be made within 3 days of receipt of goods.<br>
+                                5. This invoice serves as proof of purchase and payment.
+                            </div>
                         </div>
 
                         <div class="footer">
-                            <div>Thank you for your business.</div>
-                            <div>This is a computer-generated invoice.</div>
+                            Thank you for your business!
                         </div>
                     </body>
                 </html>
@@ -173,8 +190,8 @@ export default function InvoiceScreen({ route, navigation }: any) {
                     <ArrowLeft size={24} color={COLORS.text} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Invoice Preview</Text>
-                <TouchableOpacity onPress={() => Alert.alert('Share', 'Sharing invoice...')}>
-                    <Share2 size={24} color={COLORS.text} />
+                <TouchableOpacity onPress={generatePdf} disabled={generatingPdf}>
+                    <Share2 size={24} color={generatingPdf ? COLORS.textMuted : COLORS.text} />
                 </TouchableOpacity>
             </View>
 
@@ -189,6 +206,15 @@ export default function InvoiceScreen({ route, navigation }: any) {
                         <View style={{ alignItems: 'flex-end' }}>
                             <Text style={styles.invoiceNumber}>#{transaction.id.slice(0, 8).toUpperCase()}</Text>
                             <Text style={styles.date}>{new Date(transaction.created_at).toLocaleDateString()}</Text>
+                            <View style={{
+                                backgroundColor: '#dcfce7',
+                                paddingHorizontal: 8,
+                                paddingVertical: 2,
+                                borderRadius: 12,
+                                marginTop: 4
+                            }}>
+                                <Text style={{ color: '#166534', fontSize: 10, fontWeight: 'bold' }}>PAID</Text>
+                            </View>
                         </View>
                     </View>
 
@@ -200,11 +226,13 @@ export default function InvoiceScreen({ route, navigation }: any) {
                             <Text style={styles.label}>BILLED TO (BUYER)</Text>
                             <Text style={styles.value}>{transaction.buyer?.company_name || transaction.buyer?.full_name}</Text>
                             <Text style={styles.subValue}>{transaction.buyer?.email}</Text>
+                            {transaction.buyer?.tax_id && <Text style={styles.subValue}>Tax ID: {transaction.buyer.tax_id}</Text>}
                         </View>
                         <View style={[styles.col, { alignItems: 'flex-end' }]}>
                             <Text style={styles.label}>FROM (SELLER)</Text>
                             <Text style={styles.value}>{transaction.seller?.company_name || transaction.seller?.full_name}</Text>
                             <Text style={styles.subValue}>{transaction.seller?.email}</Text>
+                            {transaction.seller?.tax_id && <Text style={styles.subValue}>Tax ID: {transaction.seller.tax_id}</Text>}
                         </View>
                     </View>
 
