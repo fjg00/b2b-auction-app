@@ -38,29 +38,10 @@ export default function MySalesScreen({ navigation }: any) {
         loadSales();
     };
 
-    const handleRelist = async (lotId: string) => {
-        try {
-            Alert.alert(
-                'Relist Item',
-                'Are you sure you want to relist this item for 7 days?',
-                [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                        text: 'Relist',
-                        onPress: async () => {
-                            setLoading(true);
-                            await auctionService.relistLot(lotId);
-                            await loadSales(); // Reload to see changes
-                            Alert.alert('Success', 'Item relisted successfully');
-                        }
-                    }
-                ]
-            );
-        } catch (error) {
-            Alert.alert('Error', 'Failed to relist item');
-        } finally {
-            setLoading(false);
-        }
+    const handleRelist = async (item: Lot) => {
+        // Serialize item to avoid non-serializable warning (Dates to strings)
+        const serializedItem = JSON.parse(JSON.stringify(item));
+        navigation.navigate('CreateLot', { lot: serializedItem });
     };
 
     const handleCreateLot = () => {
@@ -148,7 +129,7 @@ export default function MySalesScreen({ navigation }: any) {
                     activeTab === 'unsold' ? (
                         <TouchableOpacity
                             style={styles.relistButton}
-                            onPress={() => handleRelist(item.id)}
+                            onPress={() => handleRelist(item)}
                         >
                             <Text style={styles.relistButtonText}>Relist Item</Text>
                         </TouchableOpacity>

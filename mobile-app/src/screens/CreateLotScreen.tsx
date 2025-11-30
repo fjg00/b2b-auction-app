@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { createLot } from '../services/auctionService';
+import { createLot, updateAndRelistLot } from '../services/auctionService';
 import { getAddresses, Address } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { PRODUCT_CATEGORIES, CONDITION_CATEGORIES } from '@shared/constants';
 import { Package, DollarSign, Upload, Calendar, ChevronDown, X, MapPin, Truck } from 'lucide-react-native';
 
-export default function CreateLotScreen({ navigation }: any) {
+export default function CreateLotScreen({ navigation, route }: any) {
     const { user } = useAuth();
+    const editingLot = route.params?.lot; // Check if we are editing an existing lot
     const [submitting, setSubmitting] = useState(false);
     const [addresses, setAddresses] = useState<Address[]>([]);
     const [formData, setFormData] = useState({
@@ -57,7 +58,22 @@ export default function CreateLotScreen({ navigation }: any) {
 
     useEffect(() => {
         loadAddresses();
-    }, [user]);
+        if (editingLot) {
+            // Pre-fill form if editing
+            setFormData({
+                title: editingLot.title,
+                category: '', // Category might not be in Lot type, leave empty or infer
+                description: editingLot.description || '',
+                quantity: editingLot.details?.quantity || '',
+                condition: editingLot.condition || '',
+                warehouseId: editingLot.warehouseId || '', // Map warehouse ID
+                deliveryMethod: editingLot.details?.deliveryMethod || 'Pickup',
+                startBid: editingLot.currentBid?.toString() || '',
+                buyNow: editingLot.buyNowPrice?.toString() || '',
+                duration: '7 Days', // Default for relist
+            });
+        }
+    }, [user, editingLot]);
 
     const handleSubmit = async () => {
         if (!formData.title || !formData.quantity || !formData.startBid || !formData.warehouseId) {
@@ -72,7 +88,13 @@ export default function CreateLotScreen({ navigation }: any) {
 
         setSubmitting(true);
         try {
-            const result = await createLot(formData, user.id);
+            let result;
+            if (editingLot) {
+                result = await updateAndRelistLot(editingLot.id, formData);
+            } else {
+                result = await createLot(formData, user.id);
+            }
+
             if (result.success) {
                 Alert.alert('Success', result.message, [
                     { text: 'OK', onPress: () => navigation.goBack() }
@@ -81,7 +103,7 @@ export default function CreateLotScreen({ navigation }: any) {
                 Alert.alert('Error', result.message);
             }
         } catch (error) {
-            Alert.alert('Error', 'Failed to create lot');
+            Alert.alert('Error', 'Failed to submit lot');
         } finally {
             setSubmitting(false);
         }
@@ -102,8 +124,8 @@ export default function CreateLotScreen({ navigation }: any) {
                 keyboardShouldPersistTaps="handled"
             >
                 <View style={styles.header}>
-                    <Text style={styles.title}>Create New Lot</Text>
-                    <Text style={styles.subtitle}>List your excess inventory for auction.</Text>
+                    <Text style={styles.title}>{editingLot ? 'Relist Item' : 'Create New Lot'}</Text>
+                    <Text style={styles.subtitle}>{editingLot ? 'Update details and relist for 7 days.' : 'List your excess inventory for auction.'}</Text>
                 </View>
 
                 {/* Lot Details */}
@@ -248,7 +270,7 @@ export default function CreateLotScreen({ navigation }: any) {
                     onPress={handleSubmit}
                     disabled={submitting}
                 >
-                    <Text style={styles.submitButtonText}>{submitting ? 'Publishing...' : 'Publish Lot'}</Text>
+                    <Text style={styles.submitButtonText}>{submitting ? 'Processing...' : (editingLot ? 'Update & Relist' : 'Publish Lot')}</Text>
                 </TouchableOpacity>
 
                 <View style={{ height: 40 }} />

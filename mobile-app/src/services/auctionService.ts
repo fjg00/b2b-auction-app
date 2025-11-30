@@ -244,7 +244,8 @@ export const fetchMySales = async (userId: string): Promise<Lot[]> => {
                 details: { quantity: '1', weight: 'N/A', packaging: 'Box', storage: 'Ambient' },
                 bids: [],
                 highestBidderId: bidInfo.highestBidderId,
-                created_at: lot.created_at
+                created_at: lot.created_at,
+                warehouseId: lot.warehouse_id
             };
         });
     } catch (error) {
@@ -631,7 +632,7 @@ export const relistLot = async (lotId: string) => {
         const { data, error } = await supabase
             .from('lots')
             .update({
-                status: 'active',
+                status: 'ACTIVE',
                 start_time: now.toISOString(),
                 end_time: endTime.toISOString(),
                 created_at: now.toISOString() // Optional: reset created_at to show as new
@@ -645,5 +646,39 @@ export const relistLot = async (lotId: string) => {
     } catch (error) {
         console.error('Error relisting lot:', error);
         throw error;
+    }
+};
+
+export const updateAndRelistLot = async (lotId: string, formData: any) => {
+    try {
+        const now = new Date();
+        const endTime = new Date();
+        endTime.setDate(now.getDate() + 7); // Relist for 7 days
+
+        const updates: any = {
+            title: formData.title,
+            description: formData.description || '',
+            start_price: parseFloat(formData.startBid),
+            buy_now_price: formData.buyNow ? parseFloat(formData.buyNow) : null,
+            warehouse_id: formData.warehouseId,
+            delivery_method: formData.deliveryMethod,
+            status: 'ACTIVE',
+            start_time: now.toISOString(),
+            end_time: endTime.toISOString(),
+            created_at: now.toISOString()
+        };
+
+        const { data, error } = await supabase
+            .from('lots')
+            .update(updates)
+            .eq('id', lotId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return { success: true, message: 'Item updated and relisted successfully!' };
+    } catch (error) {
+        console.error('Error updating and relisting lot:', error);
+        return { success: false, message: 'Failed to relist item.' };
     }
 };
