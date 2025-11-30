@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native';
+import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal, FlatList, Image } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 import { createLot, updateAndRelistLot } from '../services/auctionService';
 import { getAddresses, Address } from '../services/profileService';
 import { useAuth } from '../context/AuthContext';
 import { PRODUCT_CATEGORIES, CONDITION_CATEGORIES } from '@shared/constants';
-import { Package, DollarSign, Upload, Calendar, ChevronDown, X, MapPin, Truck } from 'lucide-react-native';
+import { Package, DollarSign, Upload, Calendar, ChevronDown, X, MapPin, Truck, Trash2, FileText } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { uploadFile, pickDocument } from '../services/storageService';
 
 export default function CreateLotScreen({ navigation, route }: any) {
     const { user } = useAuth();
@@ -24,6 +26,8 @@ export default function CreateLotScreen({ navigation, route }: any) {
         buyNow: '',
         duration: '7', // Default to 7 days
     });
+    const [images, setImages] = useState<string[]>([]);
+    const [uploading, setUploading] = useState(false);
 
     // Picker State
     const [pickerVisible, setPickerVisible] = useState(false);
@@ -72,8 +76,42 @@ export default function CreateLotScreen({ navigation, route }: any) {
                 buyNow: editingLot.buyNowPrice?.toString() || '',
                 duration: '7', // Default for relist
             });
+            // If editingLot has images, pre-fill them (assuming editingLot.images is an array of strings)
+            if (editingLot.images && Array.isArray(editingLot.images)) {
+                setImages(editingLot.images);
+            }
         }
     }, [user, editingLot]);
+
+    const pickFile = async () => {
+        try {
+            const file = await pickDocument();
+            if (!file) return;
+
+            setUploading(true);
+
+            // Determine path based on file type
+            const extension = file.name.split('.').pop();
+            const path = `lots/${user?.id}/${Date.now()}.${extension}`;
+
+            const publicUrl = await uploadFile(file, 'lot-images', path);
+
+            if (publicUrl) {
+                setImages(prev => [...prev, publicUrl]);
+            } else {
+                Alert.alert('Upload Failed', 'Could not upload file.');
+            }
+        } catch (error) {
+            console.error('File upload error:', error);
+            Alert.alert('Error', 'Failed to upload file.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = async () => {
         if (!formData.title || !formData.quantity || !formData.startBid || !formData.warehouseId) {
@@ -89,7 +127,7 @@ export default function CreateLotScreen({ navigation, route }: any) {
         setSubmitting(true);
         try {
             const durationDays = parseInt(formData.duration) || 7;
-            const submissionData = { ...formData, durationDays };
+            const submissionData = { ...formData, durationDays, images };
 
             let result;
             if (editingLot) {
@@ -264,10 +302,35 @@ export default function CreateLotScreen({ navigation, route }: any) {
                 {/* Photos */}
                 <View style={styles.card}>
                     {renderSectionHeader(<Upload size={20} color={COLORS.primary} />, "Photos")}
-                    <TouchableOpacity style={styles.uploadArea}>
-                        <Upload size={32} color={COLORS.textMuted} />
-                        <Text style={styles.uploadText}>Tap to upload photos</Text>
-                    </TouchableOpacity>
+
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+                        {images.map((uri, index) => (
+                            <View key={index} style={styles.imageContainer}>
+                                {uri.toLowerCase().endsWith('.pdf') ? (
+                                    <View style={[styles.thumbnail, styles.pdfThumbnail]}>
+                                        <FileText size={32} color={COLORS.primary} />
+                                        <Text style={styles.pdfText} numberOfLines={1}>PDF</Text>
+                                    </View>
+                                ) : (
+                                    <Image source={{ uri }} style={styles.thumbnail} />
+                                )}
+                                <TouchableOpacity
+                                    style={styles.removeButton}
+                                    onPress={() => removeImage(index)}
+                                >
+                                    <Trash2 size={16} color="white" />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                        <TouchableOpacity
+                            style={styles.uploadArea}
+                            onPress={pickFile}
+                            disabled={uploading}
+                        >
+                            <Upload size={32} color={COLORS.textMuted} />
+                            <Text style={styles.uploadText}>{uploading ? 'Uploading...' : 'Add File'}</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
                 </View>
 
                 <TouchableOpacity
@@ -403,19 +466,54 @@ const styles = StyleSheet.create({
         textAlignVertical: 'top',
     },
     uploadArea: {
+        width: 100,
+        height: 100,
         borderWidth: 2,
         borderColor: COLORS.border,
         borderStyle: 'dashed',
         borderRadius: RADIUS.md,
-        height: 120,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: COLORS.background,
+        marginRight: SPACING.md,
     },
     uploadText: {
-        marginTop: SPACING.sm,
+        marginTop: SPACING.xs,
         color: COLORS.textMuted,
-        fontSize: 14,
+        fontSize: 12,
+    },
+    imageScroll: {
+        flexDirection: 'row',
+    },
+    imageContainer: {
+        position: 'relative',
+        marginRight: SPACING.md,
+    },
+    thumbnail: {
+        width: 100,
+        height: 100,
+        borderRadius: RADIUS.md,
+        backgroundColor: COLORS.surface,
+    },
+    pdfThumbnail: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: COLORS.border,
+    },
+    pdfText: {
+        fontSize: 10,
+        color: COLORS.text,
+        marginTop: 4,
+        fontWeight: 'bold',
+    },
+    removeButton: {
+        position: 'absolute',
+        top: -8,
+        right: -8,
+        backgroundColor: COLORS.error,
+        borderRadius: RADIUS.full,
+        padding: 4,
     },
     submitButton: {
         backgroundColor: COLORS.primary,

@@ -388,6 +388,7 @@ export const createLot = async (formData: any, userId: string): Promise<{ succes
                     end_time: new Date(Date.now() + (formData.durationDays || 7) * 24 * 60 * 60 * 1000).toISOString(),
                     warehouse_id: formData.warehouseId,
                     delivery_method: formData.deliveryMethod,
+                    images: formData.images || [],
                 }
             ]);
 
@@ -666,6 +667,7 @@ export const updateAndRelistLot = async (lotId: string, formData: any) => {
             buy_now_price: formData.buyNow ? parseFloat(formData.buyNow) : null,
             warehouse_id: formData.warehouseId,
             delivery_method: formData.deliveryMethod,
+            images: formData.images || [],
             status: 'ACTIVE',
             start_time: now.toISOString(),
             end_time: new Date(now.getTime() + (formData.durationDays || 7) * 24 * 60 * 60 * 1000).toISOString(),

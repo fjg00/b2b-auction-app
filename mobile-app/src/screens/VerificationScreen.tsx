@@ -2,15 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { Upload, CheckCircle, Building2, User, FileText, Shield } from 'lucide-react-native';
+import { Upload, CheckCircle, Building2, User, FileText, Shield, AlertTriangle, Lock } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { getBusinessVerification, updateBusinessVerification, uploadBusinessDocument, AccountType, LegalForm } from '../services/profileService';
+import { pickDocument } from '../services/storageService';
 
 export default function VerificationScreen({ navigation }: any) {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [accountType, setAccountType] = useState<AccountType>('individual');
+    const [status, setStatus] = useState<'pending' | 'under_review' | 'verified' | 'rejected'>('pending');
+
+    const isLocked = status === 'under_review' || status === 'verified';
 
     // Individual fields
     const [nationalId, setNationalId] = useState('');
@@ -49,6 +53,9 @@ export default function VerificationScreen({ navigation }: any) {
             if (data.account_type) {
                 setAccountType(data.account_type);
             }
+            if (data.business_verification_status) {
+                setStatus(data.business_verification_status);
+            }
 
             // Individual fields
             if (data.national_id) setNationalId(data.national_id);
@@ -80,10 +87,34 @@ export default function VerificationScreen({ navigation }: any) {
         }
     };
 
-    const handleDocumentUpload = (docType: 'national_id' | 'commercial_register' | 'mof_certificate' | 'vat_certificate') => {
-        // TODO: Implement document picker
-        // For now, just show alert
-        Alert.alert('Upload', `Upload ${docType} document - Document picker to be implemented`);
+
+
+    const handleDocumentUpload = async (docType: 'national_id' | 'commercial_register' | 'mof_certificate' | 'vat_certificate') => {
+        if (isLocked) return;
+        try {
+            const file = await pickDocument();
+            if (!file) return;
+
+            // Show loading indicator or toast? For now, just alert on start
+            // Ideally we'd have per-field loading state
+
+            if (!user?.id) return;
+
+            const url = await uploadBusinessDocument(user.id, docType, file);
+
+            // Update local state
+            switch (docType) {
+                case 'national_id': setNationalIdDocument(url); break;
+                case 'commercial_register': setCommercialRegisterDoc(url); break;
+                case 'mof_certificate': setMofCertificate(url); break;
+                case 'vat_certificate': setVatCertificate(url); break;
+            }
+
+            Alert.alert('Success', 'Document uploaded successfully');
+        } catch (error) {
+            console.error('Upload error:', error);
+            Alert.alert('Error', 'Failed to upload document');
+        }
     };
 
     const validateForm = () => {
@@ -225,14 +256,51 @@ export default function VerificationScreen({ navigation }: any) {
                 showsVerticalScrollIndicator={false}
                 keyboardDismissMode="on-drag"
             >
+                {/* Status Banner */}
+                {status !== 'pending' && (
+                    <View style={[
+                        styles.statusBanner,
+                        status === 'verified' ? styles.statusVerified :
+                            status === 'rejected' ? styles.statusRejected :
+                                styles.statusPending
+                    ]}>
+                        {status === 'verified' ? <CheckCircle size={24} color="white" /> :
+                            status === 'rejected' ? <AlertTriangle size={24} color="white" /> :
+                                <Lock size={24} color="#854d0e" />}
+                        <View style={styles.statusTextContainer}>
+                            <Text style={[
+                                styles.statusTitle,
+                                status === 'verified' || status === 'rejected' ? { color: 'white' } : { color: '#854d0e' }
+                            ]}>
+                                {status === 'verified' ? 'Verified Business' :
+                                    status === 'rejected' ? 'Verification Rejected' :
+                                        'Verification Under Review'}
+                            </Text>
+                            <Text style={[
+                                styles.statusMessage,
+                                status === 'verified' || status === 'rejected' ? { color: 'rgba(255,255,255,0.9)' } : { color: '#a16207' }
+                            ]}>
+                                {status === 'verified' ? 'Your business account is fully verified.' :
+                                    status === 'rejected' ? 'Please contact support to resolve issues.' :
+                                        'Your information is being reviewed. You cannot make changes at this time.'}
+                            </Text>
+                        </View>
+                    </View>
+                )}
+
                 {/* Account Type Selection */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Are you selling as:</Text>
 
                     <View style={styles.typeSelector}>
                         <TouchableOpacity
-                            style={[styles.typeCard, accountType === 'individual' && styles.typeCardActive]}
-                            onPress={() => setAccountType('individual')}
+                            style={[
+                                styles.typeCard,
+                                accountType === 'individual' && styles.typeCardActive,
+                                isLocked && accountType !== 'individual' && styles.typeCardDisabled
+                            ]}
+                            onPress={() => !isLocked && setAccountType('individual')}
+                            disabled={isLocked}
                         >
                             <User size={32} color={accountType === 'individual' ? COLORS.primary : COLORS.textMuted} />
                             <Text style={[styles.typeTitle, accountType === 'individual' && styles.typeTitleActive]}>
@@ -242,8 +310,13 @@ export default function VerificationScreen({ navigation }: any) {
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                            style={[styles.typeCard, accountType === 'business' && styles.typeCardActive]}
-                            onPress={() => setAccountType('business')}
+                            style={[
+                                styles.typeCard,
+                                accountType === 'business' && styles.typeCardActive,
+                                isLocked && accountType !== 'business' && styles.typeCardDisabled
+                            ]}
+                            onPress={() => !isLocked && setAccountType('business')}
+                            disabled={isLocked}
                         >
                             <Building2 size={32} color={accountType === 'business' ? COLORS.primary : COLORS.textMuted} />
                             <Text style={[styles.typeTitle, accountType === 'business' && styles.typeTitleActive]}>
@@ -267,14 +340,16 @@ export default function VerificationScreen({ navigation }: any) {
                                 onChangeText={setNationalId}
                                 placeholder="Enter your national ID number"
                                 placeholderTextColor={COLORS.textMuted}
+                                editable={!isLocked}
                             />
                         </View>
 
                         <View style={styles.uploadSection}>
                             <Text style={styles.label}>National ID Document *</Text>
                             <TouchableOpacity
-                                style={styles.uploadButton}
+                                style={[styles.uploadButton, isLocked && styles.disabledInput]}
                                 onPress={() => handleDocumentUpload('national_id')}
+                                disabled={isLocked}
                             >
                                 <Upload size={20} color={COLORS.primary} />
                                 <Text style={styles.uploadButtonText}>
@@ -307,6 +382,7 @@ export default function VerificationScreen({ navigation }: any) {
                                     onChangeText={setLegalEntityName}
                                     placeholder="e.g., ABC Trading Company S.A.R.L."
                                     placeholderTextColor={COLORS.textMuted}
+                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -319,6 +395,7 @@ export default function VerificationScreen({ navigation }: any) {
                                     onChangeText={setTradeName}
                                     placeholder="e.g., ABC Store"
                                     placeholderTextColor={COLORS.textMuted}
+                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -330,9 +407,11 @@ export default function VerificationScreen({ navigation }: any) {
                                             key={form}
                                             style={[
                                                 styles.legalFormOption,
-                                                legalForm === form && styles.legalFormOptionActive
+                                                legalForm === form && styles.legalFormOptionActive,
+                                                isLocked && legalForm !== form && styles.disabledInput
                                             ]}
-                                            onPress={() => setLegalForm(form)}
+                                            onPress={() => !isLocked && setLegalForm(form)}
+                                            disabled={isLocked}
                                         >
                                             <Text style={[
                                                 styles.legalFormText,
@@ -359,6 +438,7 @@ export default function VerificationScreen({ navigation }: any) {
                                     onChangeText={setCommercialRegisterNumber}
                                     placeholder="Enter Commercial Register number"
                                     placeholderTextColor={COLORS.textMuted}
+                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -371,13 +451,15 @@ export default function VerificationScreen({ navigation }: any) {
                                     onChangeText={setTaxId}
                                     placeholder="Enter Tax ID"
                                     placeholderTextColor={COLORS.textMuted}
+                                    editable={!isLocked}
                                 />
                             </View>
 
                             <View style={styles.inputGroup}>
                                 <TouchableOpacity
                                     style={styles.checkboxRow}
-                                    onPress={() => setIsVatRegistered(!isVatRegistered)}
+                                    onPress={() => !isLocked && setIsVatRegistered(!isVatRegistered)}
+                                    disabled={isLocked}
                                 >
                                     <View style={[styles.checkbox, isVatRegistered && styles.checkboxChecked]}>
                                         {isVatRegistered && <CheckCircle size={16} color="white" />}
@@ -395,6 +477,7 @@ export default function VerificationScreen({ navigation }: any) {
                                         onChangeText={setVatNumber}
                                         placeholder="Enter VAT number"
                                         placeholderTextColor={COLORS.textMuted}
+                                        editable={!isLocked}
                                     />
                                 </View>
                             )}
@@ -407,8 +490,9 @@ export default function VerificationScreen({ navigation }: any) {
                             <View style={styles.uploadSection}>
                                 <Text style={styles.label}>Recent Commercial Register Extract *</Text>
                                 <TouchableOpacity
-                                    style={styles.uploadButton}
+                                    style={[styles.uploadButton, isLocked && styles.disabledInput]}
                                     onPress={() => handleDocumentUpload('commercial_register')}
+                                    disabled={isLocked}
                                 >
                                     <Upload size={20} color={COLORS.primary} />
                                     <Text style={styles.uploadButtonText}>
@@ -426,8 +510,9 @@ export default function VerificationScreen({ navigation }: any) {
                             <View style={styles.uploadSection}>
                                 <Text style={styles.label}>MoF Registration Certificate *</Text>
                                 <TouchableOpacity
-                                    style={styles.uploadButton}
+                                    style={[styles.uploadButton, isLocked && styles.disabledInput]}
                                     onPress={() => handleDocumentUpload('mof_certificate')}
+                                    disabled={isLocked}
                                 >
                                     <Upload size={20} color={COLORS.primary} />
                                     <Text style={styles.uploadButtonText}>
@@ -446,8 +531,9 @@ export default function VerificationScreen({ navigation }: any) {
                                 <View style={styles.uploadSection}>
                                     <Text style={styles.label}>VAT Registration Certificate *</Text>
                                     <TouchableOpacity
-                                        style={styles.uploadButton}
+                                        style={[styles.uploadButton, isLocked && styles.disabledInput]}
                                         onPress={() => handleDocumentUpload('vat_certificate')}
+                                        disabled={isLocked}
                                     >
                                         <Upload size={20} color={COLORS.primary} />
                                         <Text style={styles.uploadButtonText}>
@@ -479,6 +565,7 @@ export default function VerificationScreen({ navigation }: any) {
                                     multiline
                                     numberOfLines={3}
                                     textAlignVertical="top"
+                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -493,6 +580,7 @@ export default function VerificationScreen({ navigation }: any) {
                                     placeholderTextColor={COLORS.textMuted}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
+                                    editable={!isLocked}
                                 />
                             </View>
 
@@ -506,6 +594,7 @@ export default function VerificationScreen({ navigation }: any) {
                                     placeholder="+961 XX XXX XXX"
                                     placeholderTextColor={COLORS.textMuted}
                                     keyboardType="phone-pad"
+                                    editable={!isLocked}
                                 />
                             </View>
                         </View>
@@ -525,21 +614,25 @@ export default function VerificationScreen({ navigation }: any) {
                 </View>
 
                 {/* Save Button */}
-                <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-                        onPress={handleSave}
-                        disabled={saving}
-                    >
-                        {saving ? (
-                            <ActivityIndicator size="small" color="white" />
-                        ) : (
-                            <Text style={styles.saveButtonText}>Save Verification Info</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+
+                {/* Save Button - Hide if locked */}
+                {!isLocked && (
+                    <View style={styles.buttonContainer}>
+                        <TouchableOpacity
+                            style={[styles.saveButton, saving && styles.saveButtonDisabled]}
+                            onPress={handleSave}
+                            disabled={saving}
+                        >
+                            {saving ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <Text style={styles.saveButtonText}>Save Verification Info</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                )}
             </ScrollView>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }
 
@@ -745,5 +838,43 @@ const styles = StyleSheet.create({
         marginTop: SPACING.md,
         fontSize: 16,
         color: COLORS.textMuted,
+    },
+    statusBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: SPACING.md,
+        margin: SPACING.md,
+        borderRadius: RADIUS.md,
+    },
+    statusPending: {
+        backgroundColor: '#fef9c3', // yellow-100
+        borderWidth: 1,
+        borderColor: '#fde047', // yellow-300
+    },
+    statusVerified: {
+        backgroundColor: COLORS.success,
+    },
+    statusRejected: {
+        backgroundColor: COLORS.error,
+    },
+    statusTextContainer: {
+        marginLeft: SPACING.md,
+        flex: 1,
+    },
+    statusTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    statusMessage: {
+        fontSize: 13,
+    },
+    typeCardDisabled: {
+        opacity: 0.5,
+        backgroundColor: COLORS.background,
+    },
+    disabledInput: {
+        opacity: 0.6,
+        backgroundColor: '#f3f4f6', // gray-100
     },
 });

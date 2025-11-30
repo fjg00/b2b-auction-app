@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { uploadFile, PickedFile } from './storageService';
 
 // ==================== PROFILE FUNCTIONS ====================
 
@@ -365,6 +366,7 @@ export type LegalForm = 'sole_proprietorship' | 'sarl' | 'sal' | 'other';
 
 export interface BusinessVerificationData {
     account_type: AccountType;
+    business_verification_status?: 'pending' | 'under_review' | 'verified' | 'rejected';
 
     // Individual fields
     national_id?: string;
@@ -412,6 +414,8 @@ export async function getBusinessVerification(userId: string): Promise<BusinessV
         .from('users')
         .select(`
             account_type,
+            business_verification_status,
+            national_id,
             national_id,
             national_id_document_url,
             legal_entity_name,
@@ -438,21 +442,17 @@ export async function getBusinessVerification(userId: string): Promise<BusinessV
 export async function uploadBusinessDocument(
     userId: string,
     documentType: 'national_id' | 'commercial_register' | 'mof_certificate' | 'vat_certificate',
-    file: File | Blob,
-    fileName: string
+    file: PickedFile
 ): Promise<string> {
-    const filePath = `business_verification/${userId}/${documentType}/${Date.now()}_${fileName}`;
+    const extension = file.name.split('.').pop();
+    const fileName = `${documentType}_${Date.now()}.${extension}`;
+    const filePath = `business_verification/${userId}/${documentType}/${fileName}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file);
+    const publicUrl = await uploadFile(file, 'documents', filePath);
 
-    if (uploadError) throw uploadError;
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
+    if (!publicUrl) {
+        throw new Error('Failed to upload document');
+    }
 
     // Update user record with document URL
     const fieldMap = {
@@ -462,11 +462,13 @@ export async function uploadBusinessDocument(
         'vat_certificate': 'vat_certificate_url',
     };
 
-    await supabase
+    const { error } = await supabase
         .from('users')
-        .update({ [fieldMap[documentType]]: urlData.publicUrl })
+        .update({ [fieldMap[documentType]]: publicUrl })
         .eq('id', userId);
 
-    return urlData.publicUrl;
+    if (error) throw error;
+
+    return publicUrl;
 }
 
